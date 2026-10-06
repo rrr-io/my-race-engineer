@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mre-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: e1
+      POSTGRES_USER: e1
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    # Lightweight: shared server
+    command: >
+      postgres
+      -c shared_buffers=32MB
+      -c work_mem=2MB
+      -c max_connections=20
+    volumes:
+      - mre-db-data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e1 -d e1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: eclipse-temurin:21-jre
+    container_name: mre-backend
+    restart: unless-stopped
+    command: ["java", "-Xms32m", "-Xmx192m", "-XX:+UseSerialGC", "-jar", "/app/app.jar"]
+    environment:
+      DB_URL: jdbc:postgresql://mre-db:5432/e1
+      DB_USER: e1
+      DB_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
+    volumes:
+      - ./app.jar:/app/app.jar:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+      - web        # reachable by Caddy
+
+volumes:
+  mre-db-data:
+
+networks:
+  internal: {}
+  web:
+    external: true
