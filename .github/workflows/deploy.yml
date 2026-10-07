@@ -72,8 +72,9 @@ jobs:
       - name: Backend and database
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          printf "DB_PASSWORD=%s\n" "$DB_PASSWORD" > .env
+          printf "DB_PASSWORD=%s\nADMIN_PASSWORD=%s\n" "$DB_PASSWORD" "$ADMIN_PASSWORD" > .env
           chmod 600 .env
           scp app.jar deploy/docker-compose.yml .env "$TARGET:/opt/my-race-engineer/"
           rm .env

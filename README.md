@@ -18,5 +18,13 @@ Pushing to `main` builds and deploys to `my-race-engineer.rrriooo.com`.
 
 - `POST /api/crew` `{ "team": "sunoo" }` → `201 { id, team }`
 - `GET /api/crew/{id}` → `200` / `404`
+- `GET /api/crew/{id}/radio` → `{ phase, pitStop, messages }`
+- `GET /api/race` → `{ phase, pitStop, updatedAt }`
+- `PUT /api/admin/race` `{ "phase": "SPRINT_RACE", "pitStop": false }` (basic auth)
 
 Teams: `jay`, `jake`, `sunghoon`, `sunoo`, `jungwon`, `niki`.
+Phases: `GRID`, `FREE_PRACTICE`, `SPRINT_RACE`, `GRAND_PRIX`, `FINAL_LAP`, `FINISH_LINE`.
+
+## Admin
+
+Race Control panel at `/admin`. Default login `admin` / `admin`; override with `ADMIN_USER` and the `ADMIN_PASSWORD` secret.

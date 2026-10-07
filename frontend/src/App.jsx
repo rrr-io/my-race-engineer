@@ -36,5 +36,5 @@ export default function App() {
     )
   }
   if (status === 'onboarding') return <Onboarding onJoin={join} />
-  return <Home team={teamBySlug(crew.team)} />
+  return <Home team={teamBySlug(crew.team)} crewId={crew.id} />
 }
