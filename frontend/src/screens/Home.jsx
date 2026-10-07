@@ -1,8 +1,9 @@
 import { useRadio } from '../useRadio.js'
+import NotificationsCard from '../NotificationsCard.jsx'
 import { phaseInfo } from '../phases.js'
 
 export default function Home({ team, crewId }) {
-  const radio = useRadio(crewId)
+  const { radio, offline } = useRadio(crewId)
   const phase = radio ? phaseInfo(radio.phase) : null
 
   return (
@@ -14,6 +15,12 @@ export default function Home({ team, crewId }) {
         </div>
         {phase && <span className="phase-pill">{phase.label.toUpperCase()}</span>}
       </header>
+
+      {offline && (
+        <div className="offline-row" role="status">
+          Can't reach the pit wall. Showing the last known state.
+        </div>
+      )}
 
       {phase && (
         <div className="status-row">
@@ -30,6 +37,8 @@ export default function Home({ team, crewId }) {
           <div className="radio-label">RADIO · ENGINEER</div>
           <p className="radio-text">"{team.welcome}"</p>
         </article>
+
+        <NotificationsCard crewId={crewId} />
 
         {radio?.messages.map((m, i) => (
           <article className="radio" key={i}>

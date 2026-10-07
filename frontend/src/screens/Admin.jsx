@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { adminCheck, getRace, setRace } from '../api.js'
+import { adminCheck, adminPush, getRace, sendTestPush, setRace } from '../api.js'
 import { PHASES, phaseInfo } from '../phases.js'
 
 export default function Admin() {
@@ -61,8 +61,11 @@ function Panel({ auth, onLogout }) {
   const [picked, setPicked] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [push, setPush] = useState(null)
+  const [testResult, setTestResult] = useState(null)
 
   useEffect(() => {
+    adminPush(auth).then(setPush).catch(() => {})
     getRace()
       .then((r) => { setRaceState(r); setPicked(r.phase) })
       .catch(() => setError("Can't load the race state."))
@@ -77,6 +80,19 @@ function Panel({ auth, onLogout }) {
     } catch (err) {
       if (err.status === 401) { onLogout(); return }
       setError("Couldn't save. Try again.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const sendTest = async () => {
+    setBusy(true); setError(null); setTestResult(null)
+    try {
+      const r = await sendTestPush(auth)
+      setTestResult(`Sent to ${r.sent} device${r.sent === 1 ? '' : 's'}.`)
+    } catch (err) {
+      if (err.status === 401) { onLogout(); return }
+      setError("Couldn't send the test. Try again.")
     } finally {
       setBusy(false)
     }
@@ -134,6 +150,19 @@ function Panel({ auth, onLogout }) {
                 onClick={() => apply({ pitStop: !race.pitStop })}>
           {race.pitStop ? 'End pit stop' : 'Start pit stop'}
         </button>
+      </section>
+
+      <section className="card">
+        <div className="eyebrow">NOTIFICATIONS</div>
+        <p className="muted small">
+          {!push && 'Checking push status…'}
+          {push?.enabled && `Push is on · ${push.subscriptions} device${push.subscriptions === 1 ? '' : 's'} subscribed.`}
+          {push && !push.enabled && 'Push is off. Add the VAPID keys to turn it on.'}
+        </p>
+        <button className="btn-secondary" disabled={busy || !push?.enabled} onClick={sendTest}>
+          Send test notification
+        </button>
+        {testResult && <p className="muted small">{testResult}</p>}
       </section>
 
       {error && <p className="error" role="alert">{error}</p>}

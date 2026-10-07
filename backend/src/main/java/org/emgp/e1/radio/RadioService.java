@@ -36,15 +36,23 @@ public class RadioService {
         Phase phase = state.getPhase();
         List<RadioMessage> messages = new ArrayList<>();
 
-        if (LIGHTS_OUT_PHASES.contains(phase)) {
-            pick("LIGHTS_OUT", team.slug(), phase).ifPresent(body ->
-                    messages.add(new RadioMessage(Sender.ENGINEER, body.replace("{phase}", phase.label()))));
-        }
+        lightsOut(team, phase).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, text)));
         if (state.isPitStop()) {
-            pick("PIT_STOP", DEFAULT_TEAM, phase).ifPresent(body ->
-                    messages.add(new RadioMessage(Sender.RACE_CONTROL, body)));
+            pitStop(phase).ifPresent(text -> messages.add(new RadioMessage(Sender.RACE_CONTROL, text)));
         }
         return new Radio(phase, state.isPitStop(), state.isPractice(), messages);
+    }
+
+    /** The team's Lights Out line, empty for phases that don't have one. */
+    public Optional<String> lightsOut(Team team, Phase phase) {
+        if (!LIGHTS_OUT_PHASES.contains(phase)) {
+            return Optional.empty();
+        }
+        return pick("LIGHTS_OUT", team.slug(), phase).map(body -> body.replace("{phase}", phase.label()));
+    }
+
+    public Optional<String> pitStop(Phase phase) {
+        return pick("PIT_STOP", DEFAULT_TEAM, phase);
     }
 
     /** Variants rotate with the phase, so a given phase always reads the same. */

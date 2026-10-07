@@ -1,0 +1,170 @@
+package org.emgp.e1.push;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PreDestroy;
+import org.emgp.e1.crew.CrewMember;
+import org.emgp.e1.crew.CrewMemberRepository;
+import org.emgp.e1.crew.Team;
+import org.emgp.e1.race.Phase;
+import org.emgp.e1.race.RaceState;
+import org.emgp.e1.radio.RadioService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+@Service
+public class PushNotifier {
+
+    private static final Logger log = LoggerFactory.getLogger(PushNotifier.class);
+    private static final int TTL_SECONDS = 3600;
+
+    public record Payload(String title, String body, String tag, String url) {}
+
+    private final PushSubscriptionService subscriptions;
+    private final CrewMemberRepository crew;
+    private final RadioService radio;
+    private final ObjectMapper mapper;
+    private final String publicKey;
+    private final WebPushSender sender;
+    private final ExecutorService dispatcher = daemonPool(1);
+    private final ExecutorService workers = daemonPool(4);
+
+    public PushNotifier(PushSubscriptionService subscriptions, CrewMemberRepository crew, RadioService radio,
+                        ObjectMapper mapper,
+                        @Value("${push.vapid.public-key:}") String publicKey,
+                        @Value("${push.vapid.private-key:}") String privateKey,
+                        @Value("${push.vapid.subject}") String subject) {
+        this.subscriptions = subscriptions;
+        this.crew = crew;
+        this.radio = radio;
+        this.mapper = mapper;
+        this.publicKey = publicKey.trim();
+        this.sender = createSender(this.publicKey, privateKey.trim(), subject);
+    }
+
+    private static WebPushSender createSender(String publicKey, String privateKey, String subject) {
+        if (publicKey.isEmpty() || privateKey.isEmpty()) {
+            log.info("VAPID keys not set: push notifications are disabled");
+            return null;
+        }
+        try {
+            return new WebPushSender(publicKey, privateKey, subject);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid VAPID keys: push notifications are disabled", e);
+            return null;
+        }
+    }
+
+    public boolean enabled() {
+        return sender != null;
+    }
+
+    public String publicKey() {
+        return publicKey;
+    }
+
+    public long subscriberCount() {
+        return subscriptions.count();
+    }
+
+    /** Lights Out when the phase changes, Pit Stop when it starts. Runs in the background, after the admin request is done. */
+    public void raceChanged(Phase oldPhase, boolean oldPitStop, RaceState state) {
+        if (sender == null) {
+            return;
+        }
+        Phase phase = state.getPhase();
+        boolean practice = state.isPractice();
+        if (phase != oldPhase) {
+            dispatcher.execute(() -> notifyLightsOut(phase, practice));
+        }
+        if (state.isPitStop() && !oldPitStop) {
+            dispatcher.execute(() -> notifyPitStop(phase));
+        }
+    }
+
+    /** @return how many devices the test was sent to */
+    public int sendTest() {
+        if (sender == null) {
+            return 0;
+        }
+        List<PushSubscription> all = subscriptions.all();
+        Payload test = new Payload("Race Control", "Radio check. This is a test notification.", "radio-check", "/");
+        all.forEach(s -> workers.execute(() -> deliver(s, test)));
+        return all.size();
+    }
+
+    private void notifyLightsOut(Phase phase, boolean practice) {
+        try {
+            List<PushSubscription> all = subscriptions.all();
+            Map<UUID, Team> teamByCrew = crew
+                    .findAllById(all.stream().map(PushSubscription::getCrewId).distinct().toList())
+                    .stream()
+                    .collect(Collectors.toMap(CrewMember::getId, CrewMember::getTeam));
+            Map<Team, Optional<String>> texts = new EnumMap<>(Team.class);
+            String title = practice ? "Race Engineer · Free Practice" : "Race Engineer";
+
+            for (PushSubscription subscription : all) {
+                Team team = teamByCrew.get(subscription.getCrewId());
+                if (team == null) {
+                    continue;
+                }
+                texts.computeIfAbsent(team, t -> radio.lightsOut(t, phase)).ifPresent(text ->
+                        workers.execute(() -> deliver(subscription, new Payload(title, text, "race-phase", "/"))));
+            }
+        } catch (RuntimeException e) {
+            log.error("Lights out broadcast failed", e);
+        }
+    }
+
+    private void notifyPitStop(Phase phase) {
+        try {
+            radio.pitStop(phase).ifPresent(text -> {
+                Payload payload = new Payload("Race Control", text, "pit-stop", "/");
+                subscriptions.all().forEach(s -> workers.execute(() -> deliver(s, payload)));
+            });
+        } catch (RuntimeException e) {
+            log.error("Pit stop broadcast failed", e);
+        }
+    }
+
+    private void deliver(PushSubscription subscription, Payload payload) {
+        try {
+            byte[] body = mapper.writeValueAsBytes(payload);
+            int status = sender.send(new WebPushSender.Subscription(
+                    subscription.getEndpoint(), subscription.getP256dh(), subscription.getAuth()), body, TTL_SECONDS);
+            if (status == 404 || status == 410) {
+                subscriptions.removeExpired(subscription.getEndpoint());
+            } else if (status >= 400) {
+                log.warn("Push rejected with HTTP {} for subscription {}", status, subscription.getId());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            log.warn("Push delivery failed for subscription {}: {}", subscription.getId(), e.toString());
+        }
+    }
+
+    private static ExecutorService daemonPool(int threads) {
+        return Executors.newFixedThreadPool(threads, runnable -> {
+            Thread thread = new Thread(runnable, "push-sender");
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+
+    @PreDestroy
+    void shutdown() {
+        dispatcher.shutdown();
+        workers.shutdown();
+    }
+}

@@ -34,6 +34,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       ADMIN_USER: ${ADMIN_USER:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
     volumes:
       - ./app.jar:/app/app.jar:ro

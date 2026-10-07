@@ -1,5 +1,6 @@
 package org.emgp.e1.race;
 
+import org.emgp.e1.push.PushNotifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,9 +22,11 @@ public class RaceController {
     public record UpdateRaceRequest(Phase phase, Boolean pitStop, Boolean practice) {}
 
     private final RaceService service;
+    private final PushNotifier notifier;
 
-    public RaceController(RaceService service) {
+    public RaceController(RaceService service, PushNotifier notifier) {
         this.service = service;
+        this.notifier = notifier;
     }
 
     @GetMapping("/api/race")
@@ -36,6 +39,9 @@ public class RaceController {
         if (request.phase() == null && request.pitStop() == null && request.practice() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "phase, pitStop or practice is required");
         }
-        return RaceResponse.of(service.update(request.phase(), request.pitStop(), request.practice()));
+        RaceState before = service.get();
+        RaceState after = service.update(request.phase(), request.pitStop(), request.practice());
+        notifier.raceChanged(before.getPhase(), before.isPitStop(), after);
+        return RaceResponse.of(after);
     }
 }

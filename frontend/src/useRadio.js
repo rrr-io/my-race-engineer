@@ -4,11 +4,14 @@ import { getRadio } from './api.js'
 const POLL_MS = 30000
 
 export function useRadio(crewId) {
-  const [radio, setRadio] = useState(null)
+  const [state, setState] = useState({ radio: null, offline: false })
 
   useEffect(() => {
     let alive = true
-    const load = () => getRadio(crewId).then((r) => alive && setRadio(r)).catch(() => {})
+    const load = () =>
+      getRadio(crewId)
+        .then((radio) => alive && setState({ radio, offline: false }))
+        .catch(() => alive && setState((s) => ({ ...s, offline: true })))
     const onVisible = () => { if (document.visibilityState === 'visible') load() }
 
     load()
@@ -21,5 +24,5 @@ export function useRadio(crewId) {
     }
   }, [crewId])
 
-  return radio
+  return state
 }

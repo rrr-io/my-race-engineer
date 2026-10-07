@@ -20,7 +20,7 @@ async function request(path, { headers, ...options } = {}) {
     err.status = res.status
     throw err
   }
-  return res.json()
+  return res.status === 204 ? null : res.json()
 }
 
 export const createCrew = (team) =>
@@ -37,3 +37,12 @@ const basic = ({ user, password }) => ({
 export const adminCheck = (auth) => request('/admin/session', { headers: basic(auth) })
 export const setRace = (auth, body) =>
   request('/admin/race', { method: 'PUT', headers: basic(auth), body: JSON.stringify(body) })
+
+export const getPushKey = () => request('/push/key')
+export const savePush = (crewId, subscription) =>
+  request(`/crew/${crewId}/push`, { method: 'POST', body: JSON.stringify(subscription) })
+export const deletePush = (crewId, endpoint) =>
+  request(`/crew/${crewId}/push?endpoint=${encodeURIComponent(endpoint)}`, { method: 'DELETE' })
+export const adminPush = (auth) => request('/admin/push', { headers: basic(auth) })
+export const sendTestPush = (auth) =>
+  request('/admin/push/test', { method: 'POST', headers: basic(auth) })
