@@ -12,7 +12,7 @@ cd frontend && npm install && npm run dev     # :5173, proxies /api
 
 ## Backend layout
 
-`backend/src/main/java/org/emgp/e1`, one package per layer:
+`backend/src/main/java/org/mre/e1`, one package per layer:
 
 - `controller`: the REST endpoints (their request and response records are nested in the controller)
 - `service`: business logic, push, proofs, reminders, radio messages and the screenshot storage
