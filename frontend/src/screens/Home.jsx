@@ -18,7 +18,10 @@ export default function Home({ team, crewId }) {
       {phase && (
         <div className="status-row">
           <span>{phase.blurb}</span>
-          {radio.pitStop && <span className="pit-tag">PIT STOP</span>}
+          <span className="tags">
+            {radio.practice && <span className="pit-tag">FREE PRACTICE</span>}
+            {radio.pitStop && <span className="pit-tag">PIT STOP</span>}
+          </span>
         </div>
       )}
 

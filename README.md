@@ -20,10 +20,11 @@ Pushing to `main` builds and deploys to `my-race-engineer.rrriooo.com`.
 - `GET /api/crew/{id}` → `200` / `404`
 - `GET /api/crew/{id}/radio` → `{ phase, pitStop, messages }`
 - `GET /api/race` → `{ phase, pitStop, updatedAt }`
-- `PUT /api/admin/race` `{ "phase": "SPRINT_RACE", "pitStop": false }` (basic auth)
+- `PUT /api/admin/race` `{ "phase"?, "pitStop"?, "practice"? }` (basic auth)
 
 Teams: `jay`, `jake`, `sunghoon`, `sunoo`, `jungwon`, `niki`.
-Phases: `GRID`, `FREE_PRACTICE`, `SPRINT_RACE`, `GRAND_PRIX`, `FINAL_LAP`, `FINISH_LINE`.
+Phases: `GRID`, `SPRINT_RACE`, `GRAND_PRIX`, `FINAL_LAP`, `FINISH_LINE`.
+Free practice is a flag, not a phase: it can run alongside any phase, and toggling it resets the phase to `GRID`.
 
 ## Admin
 
