@@ -10,6 +10,18 @@ cd backend && mvn spring-boot:run             # API on :8080
 cd frontend && npm install && npm run dev     # :5173, proxies /api
 ```
 
+## Backend layout
+
+`backend/src/main/java/org/emgp/e1`, one package per layer:
+
+- `controller`: the REST endpoints (their request and response records are nested in the controller)
+- `service`: business logic, push, proofs, reminders, radio messages and the screenshot storage
+- `repository`: Spring Data repositories
+- `model`: JPA entities and the enums they use
+- `dto`: types shared between services and the API (`ProofView`)
+- `config`, `security`, `scheduler`: Spring configuration, the admin filter and the reminder timer
+- `client`: the Web Push client; `util`: small helpers
+
 ## Deploy
 
 Pushing to `main` builds and deploys to `my-race-engineer.rrriooo.com`.
