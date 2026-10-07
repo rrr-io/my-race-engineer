@@ -3,6 +3,9 @@ package org.emgp.e1.push;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,10 +20,17 @@ public class PushSubscriptionService {
 
     /** One row per device: subscribing again from the same endpoint just refreshes the keys and the crew. */
     @Transactional
-    public void save(UUID crewId, String endpoint, String p256dh, String auth) {
+    public void save(UUID crewId, String endpoint, String p256dh, String auth, String timezone) {
         repository.findByEndpoint(endpoint).ifPresentOrElse(
-                existing -> existing.update(crewId, p256dh, auth),
-                () -> repository.save(new PushSubscription(crewId, endpoint, p256dh, auth)));
+                existing -> existing.update(crewId, p256dh, auth, timezone),
+                () -> repository.save(new PushSubscription(crewId, endpoint, p256dh, auth, timezone)));
+    }
+
+    @Transactional
+    public void markReminded(Collection<Long> ids, Instant now, LocalDate day) {
+        if (!ids.isEmpty()) {
+            repository.findAllById(ids).forEach(s -> s.markReminded(now, day));
+        }
     }
 
     @Transactional

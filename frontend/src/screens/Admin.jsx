@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { adminCategories, adminCheck, adminProofs, adminPush, getRace, putCategories, sendTestPush, setRace } from '../api.js'
+import {
+  adminCategories, adminCheck, adminProofs, adminPush, adminReminders, getRace, putCategories, putReminders,
+  runReminders, sendTestPush, setRace
+} from '../api.js'
 import ProofsPanel from './AdminProofs.jsx'
 import { PHASES, phaseInfo } from '../phases.js'
 
@@ -85,6 +88,8 @@ function Panel({ auth, onLogout }) {
   )
 }
 
+const remKey = (r) => JSON.stringify([r.enabled, Number(r.intervalHours), r.windowStart, r.windowEnd])
+
 function RacePanel({ auth, onLogout }) {
   const [race, setRaceState] = useState(null)
   const [picked, setPicked] = useState(null)
@@ -95,9 +100,13 @@ function RacePanel({ auth, onLogout }) {
   const [catText, setCatText] = useState(null)
   const [catServer, setCatServer] = useState('')
   const [catSaved, setCatSaved] = useState(null)
+  const [rem, setRem] = useState(null)
+  const [remServer, setRemServer] = useState('')
+  const [remResult, setRemResult] = useState(null)
 
   useEffect(() => {
     adminPush(auth).then(setPush).catch(() => {})
+    adminReminders(auth).then((r) => { setRem(r); setRemServer(remKey(r)) }).catch(() => {})
     adminCategories(auth)
       .then((r) => { const text = r.categories.map((c) => c.name).join('\n'); setCatText(text); setCatServer(text) })
       .catch(() => {})
@@ -130,6 +139,33 @@ function RacePanel({ auth, onLogout }) {
     } catch (err) {
       if (err.status === 401) { onLogout(); return }
       setError(err.status === 400 ? 'Up to 20 categories, 80 characters each.' : "Couldn't save the categories. Try again.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const saveReminders = async () => {
+    setBusy(true); setError(null); setRemResult(null)
+    try {
+      const r = await putReminders(auth, { ...rem, intervalHours: Number(rem.intervalHours) })
+      setRem(r); setRemServer(remKey(r)); setRemResult('Saved.')
+    } catch (err) {
+      if (err.status === 401) { onLogout(); return }
+      setError(err.status === 400 ? 'Use 1 to 24 hours and two different times.' : "Couldn't save the reminders. Try again.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const sendRemindersNow = async () => {
+    if (!window.confirm('Send a reminder now to everyone who still has proofs to send?')) return
+    setBusy(true); setError(null); setRemResult(null)
+    try {
+      const r = await runReminders(auth)
+      setRemResult(`Reminded ${r.reminded} device${r.reminded === 1 ? '' : 's'}.`)
+    } catch (err) {
+      if (err.status === 401) { onLogout(); return }
+      setError("Couldn't send the reminders. Try again.")
     } finally {
       setBusy(false)
     }
@@ -228,6 +264,47 @@ function RacePanel({ auth, onLogout }) {
           Send test notification
         </button>
         {testResult && <p className="muted small">{testResult}</p>}
+      </section>
+
+      <section className="card">
+        <div className="eyebrow">REMINDERS</div>
+        <p className="muted small">
+          While a race phase is on (and no pit stop), fans who still have categories to do get a radio call from their
+          engineer, in their own local time and only inside this window. It stops once every category has a proof in
+          review or approved, and starts again if one is rejected.
+        </p>
+        {rem && (
+          <>
+            <label className="check">
+              <input type="checkbox" checked={rem.enabled} onChange={(e) => { setRem({ ...rem, enabled: e.target.checked }); setRemResult(null) }} />
+              Send reminders
+            </label>
+            <label className="field">
+              Repeat every (hours)
+              <input type="number" min="1" max="24" value={rem.intervalHours}
+                     onChange={(e) => { setRem({ ...rem, intervalHours: e.target.value }); setRemResult(null) }} />
+            </label>
+            <div className="row2">
+              <label className="field">
+                From (fan's local time)
+                <input type="time" value={rem.windowStart}
+                       onChange={(e) => { setRem({ ...rem, windowStart: e.target.value }); setRemResult(null) }} />
+              </label>
+              <label className="field">
+                Until
+                <input type="time" value={rem.windowEnd}
+                       onChange={(e) => { setRem({ ...rem, windowEnd: e.target.value }); setRemResult(null) }} />
+              </label>
+            </div>
+            <button className="btn-secondary" disabled={busy || remKey(rem) === remServer} onClick={saveReminders}>
+              Save reminders
+            </button>
+            <button className="btn-secondary" disabled={busy} onClick={sendRemindersNow}>
+              Send a reminder now
+            </button>
+          </>
+        )}
+        {remResult && <p className="muted small">{remResult}</p>}
       </section>
 
       {error && <p className="error" role="alert">{error}</p>}

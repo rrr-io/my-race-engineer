@@ -157,3 +157,7 @@ button { font-family: inherit; }
 }
 .proof-row { display: flex; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .proof-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+
+.check { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.check input { width: 22px; height: 22px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

@@ -97,6 +97,12 @@ public class RadioService {
         return String.join(", ", names.subList(0, names.size() - 1)) + " and " + names.get(names.size() - 1);
     }
 
+    /** The recurring call: {lap} is the reminder number of the Korean day, {categories} what is still to do. */
+    public Optional<String> reminder(Team team, List<String> categories, int lap) {
+        return pick("DAILY_REMINDER", team.slug(), lap - 1)
+                .map(body -> body.replace("{lap}", Integer.toString(lap)).replace("{categories}", joinNames(categories)));
+    }
+
     /** The team's line for a proof received, approved or rejected; {reason} is filled in for rejections. */
     public Optional<String> proof(Team team, ProofStatus status, String reason, long proofId) {
         String event = switch (status) {

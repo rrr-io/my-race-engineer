@@ -12,6 +12,12 @@ export const isIOS = () =>
 export const isStandalone = () =>
   window.matchMedia?.('(display-mode: standalone)').matches === true || navigator.standalone === true
 
+/** The subscription plus the device's time zone, so reminders arrive at sensible local hours. */
+export const snapshot = (subscription) => ({
+  ...subscription.toJSON(),
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+})
+
 const toKey = (base64Url) => {
   const base64 = (base64Url + '='.repeat((4 - (base64Url.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/')
   return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
@@ -36,7 +42,7 @@ export async function subscribe(crewId, publicKey) {
     userVisibleOnly: true,
     applicationServerKey: toKey(publicKey)
   })
-  await savePush(crewId, subscription.toJSON())
+  await savePush(crewId, snapshot(subscription))
 }
 
 export async function unsubscribe(crewId) {

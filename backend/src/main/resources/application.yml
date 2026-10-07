@@ -23,6 +23,9 @@ proofs:
   max-per-category: ${PROOFS_MAX_PER_CATEGORY:5}
   max-image-bytes: 8388608
 
+reminders:
+  tick-ms: ${REMINDERS_TICK_MS:300000}
+
 push:
   vapid:
     public-key: ${VAPID_PUBLIC_KEY:}

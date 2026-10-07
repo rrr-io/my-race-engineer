@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getPushKey, savePush } from './api.js'
-import { currentSubscription, isIOS, isStandalone, pushSupported, subscribe, unsubscribe } from './push.js'
+import { currentSubscription, isIOS, isStandalone, pushSupported, snapshot, subscribe, unsubscribe } from './push.js'
 
 // status: loading | hidden | install | unsupported | blocked | ask | on
 export function usePush(crewId) {
@@ -22,7 +22,7 @@ export function usePush(crewId) {
       try {
         const subscription = Notification.permission === 'granted' ? await currentSubscription() : null
         if (subscription) {
-          await savePush(crewId, subscription.toJSON()).catch(() => {})
+          await savePush(crewId, snapshot(subscription)).catch(() => {})
           return show('on')
         }
         show('ask')

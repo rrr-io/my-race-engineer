@@ -78,6 +78,14 @@ public class PushNotifier {
         return subscriptions.count();
     }
 
+    /** One notification to one device, in the background. */
+    public void send(PushSubscription subscription, String title, String body, String tag) {
+        if (sender == null) {
+            return;
+        }
+        workers.execute(() -> deliver(subscription, new Payload(title, body, tag, "/")));
+    }
+
     /** Lights Out when the phase changes, Pit Stop when it starts. Runs in the background, after the admin request is done. */
     public void raceChanged(Phase oldPhase, boolean oldPitStop, RaceState state) {
         if (sender == null) {

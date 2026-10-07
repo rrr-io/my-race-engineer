@@ -71,6 +71,11 @@ export const adminCategories = (auth) => request('/admin/categories', { headers:
 export const putCategories = (auth, names) =>
   request('/admin/categories', { method: 'PUT', headers: basic(auth), body: JSON.stringify({ names }) })
 
+export const adminReminders = (auth) => request('/admin/reminders', { headers: basic(auth) })
+export const putReminders = (auth, settings) =>
+  request('/admin/reminders', { method: 'PUT', headers: basic(auth), body: JSON.stringify(settings) })
+export const runReminders = (auth) => request('/admin/reminders/run', { method: 'POST', headers: basic(auth) })
+
 export const adminPush = (auth) => request('/admin/push', { headers: basic(auth) })
 export const sendTestPush = (auth) =>
   request('/admin/push/test', { method: 'POST', headers: basic(auth) })

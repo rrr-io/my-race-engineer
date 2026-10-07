@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.UUID;
 
 @RestController
@@ -24,7 +26,7 @@ public class PushController {
 
     public record Keys(@NotBlank String p256dh, @NotBlank String auth) {}
 
-    public record SubscribeRequest(@NotBlank String endpoint, @NotNull @Valid Keys keys) {}
+    public record SubscribeRequest(@NotBlank String endpoint, @NotNull @Valid Keys keys, String timezone) {}
 
     public record AdminPushResponse(boolean enabled, long subscriptions) {}
 
@@ -51,7 +53,21 @@ public class PushController {
         if (!crew.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        subscriptions.save(id, request.endpoint(), request.keys().p256dh(), request.keys().auth());
+        subscriptions.save(id, request.endpoint(), request.keys().p256dh(), request.keys().auth(),
+                validTimezone(request.timezone()));
+    }
+
+    /** The device's IANA time zone, used to remind it at sensible local hours; anything unusable is ignored. */
+    private static String validTimezone(String timezone) {
+        if (timezone == null || timezone.isBlank() || timezone.length() > 64) {
+            return null;
+        }
+        try {
+            ZoneId.of(timezone.trim());
+            return timezone.trim();
+        } catch (DateTimeException e) {
+            return null;
+        }
     }
 
     @DeleteMapping("/api/crew/{id}/push")
