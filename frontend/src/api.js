@@ -11,8 +11,9 @@ export const clearCrewId = () => {
 }
 
 async function request(path, { headers, ...options } = {}) {
+  const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData
   const res = await fetch(`/api${path}`, {
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: isForm ? { ...headers } : { 'Content-Type': 'application/json', ...headers },
     ...options
   })
   if (!res.ok) {
@@ -43,6 +44,33 @@ export const savePush = (crewId, subscription) =>
   request(`/crew/${crewId}/push`, { method: 'POST', body: JSON.stringify(subscription) })
 export const deletePush = (crewId, endpoint) =>
   request(`/crew/${crewId}/push?endpoint=${encodeURIComponent(endpoint)}`, { method: 'DELETE' })
+export const submitProof = (crewId, items) => {
+  const form = new FormData()
+  items.forEach(({ file, categoryId }) => {
+    form.append('files', file, file.name || 'screenshot.jpg')
+    form.append('categoryIds', String(categoryId))
+  })
+  return request(`/crew/${crewId}/proofs`, { method: 'POST', body: form })
+}
+export const adminProofs = (auth) => request('/admin/proofs', { headers: basic(auth) })
+export const approveProof = (auth, id) =>
+  request(`/admin/proofs/${id}/approve`, { method: 'POST', headers: basic(auth) })
+export const rejectProof = (auth, id, reason) =>
+  request(`/admin/proofs/${id}/reject`, { method: 'POST', headers: basic(auth), body: JSON.stringify({ reason }) })
+export async function fetchProofImage(auth, id) {
+  const res = await fetch(`/api/admin/proofs/${id}/image`, { headers: basic(auth) })
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`)
+    err.status = res.status
+    throw err
+  }
+  return res.blob()
+}
+
+export const adminCategories = (auth) => request('/admin/categories', { headers: basic(auth) })
+export const putCategories = (auth, names) =>
+  request('/admin/categories', { method: 'PUT', headers: basic(auth), body: JSON.stringify({ names }) })
+
 export const adminPush = (auth) => request('/admin/push', { headers: basic(auth) })
 export const sendTestPush = (auth) =>
   request('/admin/push/test', { method: 'POST', headers: basic(auth) })

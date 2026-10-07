@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { adminCheck, adminPush, getRace, sendTestPush, setRace } from '../api.js'
+import { adminCategories, adminCheck, adminProofs, adminPush, getRace, putCategories, sendTestPush, setRace } from '../api.js'
+import ProofsPanel from './AdminProofs.jsx'
 import { PHASES, phaseInfo } from '../phases.js'
 
 export default function Admin() {
@@ -57,15 +58,49 @@ function Login({ onLogin }) {
 }
 
 function Panel({ auth, onLogout }) {
+  const [tab, setTab] = useState('race')
+  const [pending, setPending] = useState(null)
+
+  useEffect(() => {
+    adminProofs(auth).then((r) => setPending(r.pendingCount)).catch(() => {})
+  }, [auth])
+
+  const tabButton = (key, label) => (
+    <button type="button" role="tab" aria-selected={tab === key}
+            className={`tab ${tab === key ? 'is-active' : ''}`} onClick={() => setTab(key)}>
+      {label}
+    </button>
+  )
+
+  return (
+    <>
+      <nav className="tabs" role="tablist" aria-label="Race Control sections">
+        {tabButton('race', 'Race')}
+        {tabButton('proofs', pending ? `Proofs (${pending})` : 'Proofs')}
+      </nav>
+      {tab === 'race'
+        ? <RacePanel auth={auth} onLogout={onLogout} />
+        : <ProofsPanel auth={auth} onLogout={onLogout} onCount={setPending} />}
+    </>
+  )
+}
+
+function RacePanel({ auth, onLogout }) {
   const [race, setRaceState] = useState(null)
   const [picked, setPicked] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [push, setPush] = useState(null)
   const [testResult, setTestResult] = useState(null)
+  const [catText, setCatText] = useState(null)
+  const [catServer, setCatServer] = useState('')
+  const [catSaved, setCatSaved] = useState(null)
 
   useEffect(() => {
     adminPush(auth).then(setPush).catch(() => {})
+    adminCategories(auth)
+      .then((r) => { const text = r.categories.map((c) => c.name).join('\n'); setCatText(text); setCatServer(text) })
+      .catch(() => {})
     getRace()
       .then((r) => { setRaceState(r); setPicked(r.phase) })
       .catch(() => setError("Can't load the race state."))
@@ -80,6 +115,21 @@ function Panel({ auth, onLogout }) {
     } catch (err) {
       if (err.status === 401) { onLogout(); return }
       setError("Couldn't save. Try again.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const saveCategories = async () => {
+    setBusy(true); setError(null); setCatSaved(null)
+    try {
+      const r = await putCategories(auth, catText.split('\n'))
+      const text = r.categories.map((c) => c.name).join('\n')
+      setCatText(text); setCatServer(text)
+      setCatSaved(`Saved · ${r.categories.length} categor${r.categories.length === 1 ? 'y' : 'ies'}.`)
+    } catch (err) {
+      if (err.status === 401) { onLogout(); return }
+      setError(err.status === 400 ? 'Up to 20 categories, 80 characters each.' : "Couldn't save the categories. Try again.")
     } finally {
       setBusy(false)
     }
@@ -133,6 +183,21 @@ function Panel({ auth, onLogout }) {
                 onClick={() => apply({ phase: picked })}>
           Set phase
         </button>
+      </section>
+
+      <section className="card">
+        <div className="eyebrow">VOTING CATEGORIES</div>
+        <p className="muted small">
+          One per line, in the order fans see them. Change the list when a new stage starts. A category you keep
+          (same name) keeps today's progress; one you remove is archived.
+        </p>
+        <textarea className="textarea" rows={6} aria-label="Voting categories" value={catText ?? ''}
+                  disabled={catText === null} onChange={(e) => { setCatText(e.target.value); setCatSaved(null) }} />
+        <button className="btn-secondary" disabled={busy || catText === null || catText === catServer}
+                onClick={saveCategories}>
+          Save categories
+        </button>
+        {catSaved && <p className="muted small">{catSaved}</p>}
       </section>
 
       <section className="card">

@@ -39,6 +39,11 @@ public class PushSubscriptionService {
     }
 
     @Transactional(readOnly = true)
+    public List<PushSubscription> forCrew(UUID crewId) {
+        return repository.findByCrewId(crewId);
+    }
+
+    @Transactional(readOnly = true)
     public long count() {
         return repository.count();
     }

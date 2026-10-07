@@ -9,9 +9,19 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 40MB
 
 server:
   port: ${PORT:8080}
+
+proofs:
+  dir: ${PROOFS_DIR:./data/proofs}
+  max-per-submission: ${PROOFS_MAX_PER_SUBMISSION:10}
+  max-per-category: ${PROOFS_MAX_PER_CATEGORY:5}
+  max-image-bytes: 8388608
 
 push:
   vapid:

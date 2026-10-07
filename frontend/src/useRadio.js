@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getRadio } from './api.js'
 
 const POLL_MS = 30000
 
 export function useRadio(crewId) {
   const [state, setState] = useState({ radio: null, offline: false })
+  const reloadRef = useRef(() => {})
 
   useEffect(() => {
     let alive = true
@@ -14,6 +15,7 @@ export function useRadio(crewId) {
         .catch(() => alive && setState((s) => ({ ...s, offline: true })))
     const onVisible = () => { if (document.visibilityState === 'visible') load() }
 
+    reloadRef.current = load
     load()
     const timer = setInterval(load, POLL_MS)
     document.addEventListener('visibilitychange', onVisible)
@@ -24,5 +26,5 @@ export function useRadio(crewId) {
     }
   }, [crewId])
 
-  return state
+  return { ...state, reload: () => reloadRef.current() }
 }

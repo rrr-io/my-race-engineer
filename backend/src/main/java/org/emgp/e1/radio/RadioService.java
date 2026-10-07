@@ -4,6 +4,9 @@ import org.emgp.e1.crew.Team;
 import org.emgp.e1.message.MessageTemplate;
 import org.emgp.e1.message.MessageTemplateRepository;
 import org.emgp.e1.race.Phase;
+import org.emgp.e1.proof.ProofState;
+import org.emgp.e1.proof.ProofStatus;
+import org.emgp.e1.proof.ProofView;
 import org.emgp.e1.race.RaceState;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +23,7 @@ public class RadioService {
 
     public record RadioMessage(Sender from, String text) {}
 
-    public record Radio(Phase phase, boolean pitStop, boolean practice, List<RadioMessage> messages) {}
+    public record Radio(Phase phase, boolean pitStop, boolean practice, ProofView proof, List<RadioMessage> messages) {}
 
     private static final String DEFAULT_TEAM = "default";
     private static final Set<Phase> LIGHTS_OUT_PHASES =
@@ -32,15 +35,17 @@ public class RadioService {
         this.templates = templates;
     }
 
-    public Radio forTeam(Team team, RaceState state) {
+    public Radio forTeam(Team team, RaceState state, ProofView proof) {
         Phase phase = state.getPhase();
         List<RadioMessage> messages = new ArrayList<>();
 
         lightsOut(team, phase).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, text)));
+        briefing(team, proof).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, text)));
+        proofLine(team, proof).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, text)));
         if (state.isPitStop()) {
             pitStop(phase).ifPresent(text -> messages.add(new RadioMessage(Sender.RACE_CONTROL, text)));
         }
-        return new Radio(phase, state.isPitStop(), state.isPractice(), messages);
+        return new Radio(phase, state.isPitStop(), state.isPractice(), proof, messages);
     }
 
     /** The team's Lights Out line, empty for phases that don't have one. */
@@ -48,15 +53,63 @@ public class RadioService {
         if (!LIGHTS_OUT_PHASES.contains(phase)) {
             return Optional.empty();
         }
-        return pick("LIGHTS_OUT", team.slug(), phase).map(body -> body.replace("{phase}", phase.label()));
+        return pick("LIGHTS_OUT", team.slug(), phase.ordinal()).map(body -> body.replace("{phase}", phase.label()));
     }
 
     public Optional<String> pitStop(Phase phase) {
-        return pick("PIT_STOP", DEFAULT_TEAM, phase);
+        return pick("PIT_STOP", DEFAULT_TEAM, phase.ordinal());
     }
 
-    /** Variants rotate with the phase, so a given phase always reads the same. */
-    private Optional<String> pick(String event, String team, Phase phase) {
+    /** Where to vote and in which categories: only what is still to do (missing or rejected), new variant each day. */
+    private Optional<String> briefing(Team team, ProofView proof) {
+        List<String> todo = proof.categories().stream()
+                .filter(c -> c.state() == ProofState.MISSING || c.state() == ProofState.REJECTED)
+                .map(ProofView.CategoryProgress::name)
+                .toList();
+        if (todo.isEmpty()) {
+            return Optional.empty();
+        }
+        return pick("VOTE_BRIEFING", team.slug(), (int) (proof.day().toEpochDay() % 1000))
+                .map(body -> body.replace("{categories}", joinNames(todo)));
+    }
+
+    /** One line for the whole day: all approved, else the first rejection, else "received" while proofs wait. */
+    private Optional<String> proofLine(Team team, ProofView proof) {
+        int seed = proof.latestProofId() == null ? 0 : (int) (proof.latestProofId() % 1000);
+        if (proof.done()) {
+            return proof(team, ProofStatus.APPROVED, null, seed);
+        }
+        Optional<ProofView.CategoryProgress> rejected = proof.categories().stream()
+                .filter(c -> c.state() == ProofState.REJECTED).findFirst();
+        if (rejected.isPresent()) {
+            return proof(team, ProofStatus.REJECTED, rejected.get().reason() + " (" + rejected.get().name() + ")", seed);
+        }
+        if (proof.categories().stream().anyMatch(c -> c.state() == ProofState.PENDING)) {
+            return proof(team, ProofStatus.PENDING, null, seed);
+        }
+        return Optional.empty();
+    }
+
+    static String joinNames(List<String> names) {
+        if (names.size() == 1) {
+            return names.get(0);
+        }
+        return String.join(", ", names.subList(0, names.size() - 1)) + " and " + names.get(names.size() - 1);
+    }
+
+    /** The team's line for a proof received, approved or rejected; {reason} is filled in for rejections. */
+    public Optional<String> proof(Team team, ProofStatus status, String reason, long proofId) {
+        String event = switch (status) {
+            case PENDING -> "PROOF_RECEIVED";
+            case APPROVED -> "PROOF_APPROVED";
+            case REJECTED -> "PROOF_REJECTED";
+        };
+        return pick(event, team.slug(), (int) (proofId % 1000))
+                .map(body -> body.replace("{reason}", reason == null ? "" : reason));
+    }
+
+    /** Variants rotate with the seed (phase or proof id), so the same moment always reads the same. */
+    private Optional<String> pick(String event, String team, int seed) {
         List<MessageTemplate> found = templates.findByEventTypeAndTeamOrderByVariant(event, team);
         if (found.isEmpty() && !DEFAULT_TEAM.equals(team)) {
             found = templates.findByEventTypeAndTeamOrderByVariant(event, DEFAULT_TEAM);
@@ -64,6 +117,6 @@ public class RadioService {
         if (found.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(found.get(phase.ordinal() % found.size()).getBody());
+        return Optional.of(found.get(seed % found.size()).getBody());
     }
 }

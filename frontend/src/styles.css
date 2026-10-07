@@ -91,6 +91,16 @@ button { font-family: inherit; }
 .notify-note { margin: 0; font-size: 14px; line-height: 1.4; color: var(--muted); }
 .steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.4; }
 
+.proof { margin: 0; }
+.proof-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.thumbs, .proof-images { display: flex; gap: 8px; flex-wrap: wrap; }
+.thumb { position: relative; }
+.thumb img { display: block; width: 84px; height: 140px; object-fit: cover; border-radius: 8px; }
+.thumb-remove {
+  position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: none; border-radius: 14px;
+  background: rgba(0, 0, 0, 0.7); color: #fff; font-size: 18px; line-height: 1; cursor: pointer;
+}
+
 /* Admin */
 .admin-link { color: var(--muted); font-size: 14px; }
 .admin-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
@@ -118,3 +128,32 @@ button { font-family: inherit; }
 .btn-link { align-self: center; padding: 8px; background: none; border: none; color: var(--muted); font-size: 15px; cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.tabs { display: flex; gap: 8px; padding: 12px 20px 0; }
+.tab {
+  height: 40px; padding: 0 16px; border-radius: 20px; border: 1px solid #3A3D45;
+  background: transparent; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.tab.is-active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.proof-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.proof-img {
+  display: flex; align-items: center; justify-content: center; width: 96px; height: 160px; object-fit: cover;
+  border-radius: 8px; background: #24262C; color: var(--muted); font-size: 12px; text-align: center;
+}
+.proof-actions { display: flex; gap: 8px; }
+.proof-actions > button { flex: 1; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid #3A3D45;
+  background: transparent; color: var(--text); font-size: 13px; cursor: pointer;
+}
+
+.category { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.category-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.small { font-size: 14px; }
+.textarea {
+  min-height: 120px; padding: 12px; border-radius: 8px; border: 1px solid #3A3D45; resize: vertical;
+  background: var(--surface); color: var(--text); font-family: inherit; font-size: 16px; line-height: 1.4;
+}
+.proof-row { display: flex; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.proof-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }

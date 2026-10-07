@@ -5,6 +5,7 @@ import jakarta.annotation.PreDestroy;
 import org.emgp.e1.crew.CrewMember;
 import org.emgp.e1.crew.CrewMemberRepository;
 import org.emgp.e1.crew.Team;
+import org.emgp.e1.proof.ProofStatus;
 import org.emgp.e1.race.Phase;
 import org.emgp.e1.race.RaceState;
 import org.emgp.e1.radio.RadioService;
@@ -90,6 +91,24 @@ public class PushNotifier {
         if (state.isPitStop() && !oldPitStop) {
             dispatcher.execute(() -> notifyPitStop(phase));
         }
+    }
+
+    /** Tells one fan how Race Control judged their proof, in their engineer's voice. */
+    public void proofDecided(UUID crewId, ProofStatus status, String reason, long proofId) {
+        if (sender == null) {
+            return;
+        }
+        dispatcher.execute(() -> {
+            try {
+                crew.findById(crewId).flatMap(member -> radio.proof(member.getTeam(), status, reason, proofId))
+                        .ifPresent(text -> {
+                            Payload payload = new Payload("Race Engineer", text, "proof", "/");
+                            subscriptions.forCrew(crewId).forEach(s -> workers.execute(() -> deliver(s, payload)));
+                        });
+            } catch (RuntimeException e) {
+                log.error("Proof notification failed", e);
+            }
+        });
     }
 
     /** @return how many devices the test was sent to */

@@ -1,9 +1,10 @@
 import { useRadio } from '../useRadio.js'
 import NotificationsCard from '../NotificationsCard.jsx'
+import ProofCard from '../ProofCard.jsx'
 import { phaseInfo } from '../phases.js'
 
 export default function Home({ team, crewId }) {
-  const { radio, offline } = useRadio(crewId)
+  const { radio, offline, reload } = useRadio(crewId)
   const phase = radio ? phaseInfo(radio.phase) : null
 
   return (
@@ -48,6 +49,8 @@ export default function Home({ team, crewId }) {
             <p className="radio-text">"{m.text}"</p>
           </article>
         ))}
+
+        <ProofCard crewId={crewId} proof={radio?.proof} onChanged={reload} />
       </main>
     </div>
   )
