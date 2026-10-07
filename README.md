@@ -24,6 +24,7 @@ Pushing to `main` builds and deploys to `my-race-engineer.rrriooo.com`.
 - `GET /api/crew/{id}/proofs/today` → `{ done, needsAction, categories: [{ id, name, state, reason, count }] }` (`MISSING`, `PENDING`, `APPROVED`, `REJECTED`)
 - `GET /api/admin/categories`, `PUT /api/admin/categories` `{ "names": [...] }` (basic auth)
 - `GET /api/admin/proofs`, `GET /api/admin/proofs/{id}/image`, `POST /api/admin/proofs/{id}/approve`, `POST /api/admin/proofs/{id}/reject` `{ "reason" }` (basic auth)
+- `GET /api/admin/vote-link`, `PUT /api/admin/vote-link` `{ "url" }` (basic auth)
 - `GET /api/admin/reminders`, `PUT /api/admin/reminders` `{ enabled, intervalHours, windowStart, windowEnd }`, `POST /api/admin/reminders/run` (basic auth)
 - `GET /api/push/key` → `{ enabled, publicKey }`
 - `POST /api/crew/{id}/push` a browser `PushSubscription` → `204`
@@ -40,6 +41,12 @@ Free practice is a flag, not a phase: it can run alongside any phase, and toggli
 Race Control sets the voting categories from `/admin` (one per line; change them at each stage). Every day (Korean time, KST) a fan sends any number of screenshots, each for one category, and needs at least one approved per category to be done. Before that the engineer briefs them on MNET+ and the categories still to do. Each screenshot is reviewed on its own in `/admin` (Beta Testing): approved, or rejected with a reason and sent again. The fan gets a push when a screenshot is rejected and when the whole day is approved.
 
 Limits: `PROOFS_MAX_PER_SUBMISSION` (default 10) and `PROOFS_MAX_PER_CATEGORY` per day (default 5). Screenshots are stored on disk in `PROOFS_DIR` (a Docker volume in production) and are only served to the admin.
+
+## Buttons and what's new
+
+The engineer's voting message has two buttons: "Open MNET+" (the link Race Control sets in `/admin`, https only, `https://mnetplus.world/` by default) and "Upload proof" (scrolls to the proof card). Reminder and rejection notifications carry the same buttons where the device shows them (Android and desktop; iPhone ignores notification buttons, and tapping the notification opens the proof card). The newest message the fan has not seen glows with a NEW tag until they tap it or leave the app.
+
+While a pit stop is on, the stage is frozen: the phase and free practice cannot be changed until it ends.
 
 ## Reminders
 

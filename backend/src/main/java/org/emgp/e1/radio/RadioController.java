@@ -4,6 +4,7 @@ import org.emgp.e1.crew.CrewMember;
 import org.emgp.e1.crew.CrewMemberRepository;
 import org.emgp.e1.proof.ProofService;
 import org.emgp.e1.race.RaceService;
+import org.emgp.e1.vote.VoteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,18 +22,21 @@ public class RadioController {
     private final RaceService race;
     private final RadioService radio;
     private final ProofService proofs;
+    private final VoteService vote;
 
-    public RadioController(CrewMemberRepository crew, RaceService race, RadioService radio, ProofService proofs) {
+    public RadioController(CrewMemberRepository crew, RaceService race, RadioService radio, ProofService proofs,
+                           VoteService vote) {
         this.crew = crew;
         this.race = race;
         this.radio = radio;
         this.proofs = proofs;
+        this.vote = vote;
     }
 
     @GetMapping("/{id}/radio")
     public RadioService.Radio get(@PathVariable UUID id) {
         CrewMember member = crew.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        return radio.forTeam(member.getTeam(), race.get(), proofs.today(id));
+        return radio.forTeam(member.getTeam(), race.get(), proofs.today(id), vote.url());
     }
 }

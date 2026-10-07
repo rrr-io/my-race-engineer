@@ -29,7 +29,14 @@ public class PushNotifier {
     private static final Logger log = LoggerFactory.getLogger(PushNotifier.class);
     private static final int TTL_SECONDS = 3600;
 
-    public record Payload(String title, String body, String tag, String url) {}
+    public record Action(String action, String title) {}
+
+    /** voteUrl and actions are optional: they only go out with reminders and rejections. */
+    public record Payload(String title, String body, String tag, String url, String voteUrl, List<Action> actions) {
+        public Payload(String title, String body, String tag, String url) {
+            this(title, body, tag, url, null, List.of());
+        }
+    }
 
     private final PushSubscriptionService subscriptions;
     private final CrewMemberRepository crew;
@@ -78,6 +85,16 @@ public class PushNotifier {
         return subscriptions.count();
     }
 
+    /** The recurring call, with "Open MNET+" and "Upload proof" buttons where the device shows them. */
+    public void sendReminder(PushSubscription subscription, String title, String body, String voteUrl) {
+        if (sender == null) {
+            return;
+        }
+        Payload payload = new Payload(title, body, "reminder", "/?proof=1", voteUrl,
+                List.of(new Action("mnet", "Open MNET+"), new Action("proof", "Upload proof")));
+        workers.execute(() -> deliver(subscription, payload));
+    }
+
     /** One notification to one device, in the background. */
     public void send(PushSubscription subscription, String title, String body, String tag) {
         if (sender == null) {
@@ -110,7 +127,10 @@ public class PushNotifier {
             try {
                 crew.findById(crewId).flatMap(member -> radio.proof(member.getTeam(), status, reason, proofId))
                         .ifPresent(text -> {
-                            Payload payload = new Payload("Race Engineer", text, "proof", "/");
+                            Payload payload = status == ProofStatus.REJECTED
+                                    ? new Payload("Race Engineer", text, "proof", "/?proof=1", null,
+                                            List.of(new Action("proof", "Upload proof")))
+                                    : new Payload("Race Engineer", text, "proof", "/");
                             subscriptions.forCrew(crewId).forEach(s -> workers.execute(() -> deliver(s, payload)));
                         });
             } catch (RuntimeException e) {

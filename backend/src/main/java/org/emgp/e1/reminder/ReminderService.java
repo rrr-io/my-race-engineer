@@ -13,6 +13,7 @@ import org.emgp.e1.race.Phase;
 import org.emgp.e1.race.RaceService;
 import org.emgp.e1.race.RaceState;
 import org.emgp.e1.radio.RadioService;
+import org.emgp.e1.vote.VoteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,11 +55,12 @@ public class ReminderService {
     private final CrewMemberRepository crew;
     private final RadioService radio;
     private final PushNotifier notifier;
+    private final VoteService vote;
     private final Clock clock;
 
     public ReminderService(ReminderSettingsRepository settingsRepository, RaceService race, ProofService proofs,
                            PushSubscriptionService subscriptions, CrewMemberRepository crew, RadioService radio,
-                           PushNotifier notifier, Clock clock) {
+                           PushNotifier notifier, VoteService vote, Clock clock) {
         this.settingsRepository = settingsRepository;
         this.race = race;
         this.proofs = proofs;
@@ -66,6 +68,7 @@ public class ReminderService {
         this.crew = crew;
         this.radio = radio;
         this.notifier = notifier;
+        this.vote = vote;
         this.clock = clock;
     }
 
@@ -117,6 +120,7 @@ public class ReminderService {
                 .collect(Collectors.toMap(CrewMember::getId, CrewMember::getTeam));
         Map<UUID, ProofView> progress = new HashMap<>();
         String title = state.isPractice() ? "Race Engineer · Free Practice" : "Race Engineer";
+        String voteUrl = vote.url();
 
         List<Long> reminded = new ArrayList<>();
         for (PushSubscription subscription : all) {
@@ -134,7 +138,7 @@ public class ReminderService {
                     .toList();
             int lap = subscription.remindersOn(day) + 1;
             radio.reminder(team, todo, lap).ifPresent(text -> {
-                notifier.send(subscription, title, text, "reminder");
+                notifier.sendReminder(subscription, title, text, voteUrl);
                 reminded.add(subscription.getId());
             });
         }

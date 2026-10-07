@@ -161,3 +161,22 @@ button { font-family: inherit; }
 .check { display: flex; align-items: center; gap: 10px; font-size: 16px; }
 .check input { width: 22px; height: 22px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* what's new, and what to do about it */
+.radio-head { display: flex; align-items: center; gap: 8px; }
+.new-chip {
+  color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 2px 6px;
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+}
+.radio.is-new { cursor: pointer; }
+.radio.is-new .radio-text { box-shadow: 0 0 0 1px var(--accent), 0 0 18px -2px var(--accent); animation: glow 2.4s ease-in-out 3; }
+@keyframes glow { 50% { box-shadow: 0 0 0 1px var(--accent), 0 0 30px 2px var(--accent); } }
+.card.is-highlight { box-shadow: 0 0 0 2px var(--accent), 0 0 24px -2px var(--accent); animation: glow 1.2s ease-in-out 2; }
+.msg-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 14px 12px; background: #000; }
+.btn-action {
+  display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 16px;
+  border: 1px solid var(--accent); border-radius: 20px; background: transparent; color: var(--text);
+  font-family: inherit; font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.btn-action:first-child { background: var(--accent); color: var(--on-accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

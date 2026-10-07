@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
-  adminCategories, adminCheck, adminProofs, adminPush, adminReminders, getRace, putCategories, putReminders,
-  runReminders, sendTestPush, setRace
+  adminCategories, adminCheck, adminProofs, adminPush, adminReminders, adminVoteLink, getRace, putCategories,
+  putReminders, putVoteLink, runReminders, sendTestPush, setRace
 } from '../api.js'
 import ProofsPanel from './AdminProofs.jsx'
 import { PHASES, phaseInfo } from '../phases.js'
@@ -103,9 +103,13 @@ function RacePanel({ auth, onLogout }) {
   const [rem, setRem] = useState(null)
   const [remServer, setRemServer] = useState('')
   const [remResult, setRemResult] = useState(null)
+  const [vote, setVote] = useState(null)
+  const [voteServer, setVoteServer] = useState('')
+  const [voteSaved, setVoteSaved] = useState(null)
 
   useEffect(() => {
     adminPush(auth).then(setPush).catch(() => {})
+    adminVoteLink(auth).then((r) => { setVote(r.url); setVoteServer(r.url) }).catch(() => {})
     adminReminders(auth).then((r) => { setRem(r); setRemServer(remKey(r)) }).catch(() => {})
     adminCategories(auth)
       .then((r) => { const text = r.categories.map((c) => c.name).join('\n'); setCatText(text); setCatServer(text) })
@@ -123,6 +127,11 @@ function RacePanel({ auth, onLogout }) {
       setPicked(r.phase)
     } catch (err) {
       if (err.status === 401) { onLogout(); return }
+      if (err.status === 409) {
+        setError('End the pit stop before changing stage.')
+        getRace().then((r) => { setRaceState(r); setPicked(r.phase) }).catch(() => {})
+        return
+      }
       setError("Couldn't save. Try again.")
     } finally {
       setBusy(false)
@@ -139,6 +148,19 @@ function RacePanel({ auth, onLogout }) {
     } catch (err) {
       if (err.status === 401) { onLogout(); return }
       setError(err.status === 400 ? 'Up to 20 categories, 80 characters each.' : "Couldn't save the categories. Try again.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const saveVote = async () => {
+    setBusy(true); setError(null); setVoteSaved(null)
+    try {
+      const r = await putVoteLink(auth, vote.trim())
+      setVote(r.url); setVoteServer(r.url); setVoteSaved('Saved.')
+    } catch (err) {
+      if (err.status === 401) { onLogout(); return }
+      setError(err.status === 400 ? 'Use a full https:// link.' : "Couldn't save the link. Try again.")
     } finally {
       setBusy(false)
     }
@@ -192,6 +214,8 @@ function RacePanel({ auth, onLogout }) {
 
   if (!race) return <p className="admin-body muted">{error ?? 'Loading…'}</p>
 
+  const frozen = race.pitStop
+
   return (
     <div className="admin-body">
       <section className="card">
@@ -205,9 +229,10 @@ function RacePanel({ auth, onLogout }) {
 
       <section className="card">
         <div className="eyebrow">SET PHASE</div>
+        {frozen && <p className="muted small">Pit stop is on. End it to change stage.</p>}
         <div className="phase-list" role="radiogroup" aria-label="Race phase">
           {PHASES.map((p) => (
-            <button key={p.key} type="button" role="radio" aria-checked={picked === p.key}
+            <button key={p.key} type="button" role="radio" aria-checked={picked === p.key} disabled={frozen}
                     className={`phase-option ${picked === p.key ? 'is-picked' : ''}`}
                     onClick={() => setPicked(p.key)}>
               <span>{p.label}</span>
@@ -215,7 +240,7 @@ function RacePanel({ auth, onLogout }) {
             </button>
           ))}
         </div>
-        <button className="btn-primary" disabled={busy || picked === race.phase}
+        <button className="btn-primary" disabled={busy || frozen || picked === race.phase}
                 onClick={() => apply({ phase: picked })}>
           Set phase
         </button>
@@ -237,9 +262,28 @@ function RacePanel({ auth, onLogout }) {
       </section>
 
       <section className="card">
+        <div className="eyebrow">MNET+ LINK</div>
+        <p className="muted small">
+          Where the "Open MNET+" button takes fans. Use the page or the link for the current stage; it must start
+          with https://.
+        </p>
+        <label className="field">
+          Link
+          <input type="url" value={vote ?? ''} disabled={vote === null} autoCapitalize="none" autoCorrect="off"
+                 onChange={(e) => { setVote(e.target.value); setVoteSaved(null) }} />
+        </label>
+        <button className="btn-secondary" disabled={busy || vote === null || vote.trim() === voteServer}
+                onClick={saveVote}>
+          Save link
+        </button>
+        {voteSaved && <p className="muted small">{voteSaved}</p>}
+      </section>
+
+      <section className="card">
         <div className="eyebrow">FREE PRACTICE</div>
+        {frozen && <p className="muted small">Pit stop is on. End it to switch free practice.</p>}
         <p className="muted small">Marks the race as a simulation. Switching it on or off resets the phase to Grid.</p>
-        <button className="btn-secondary" disabled={busy} onClick={togglePractice}>
+        <button className="btn-secondary" disabled={busy || frozen} onClick={togglePractice}>
           {race.practice ? 'End free practice' : 'Start free practice'}
         </button>
       </section>

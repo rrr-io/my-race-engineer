@@ -12,7 +12,7 @@ const messageFor = (err) => {
   return "Couldn't send your proof. Check your connection and try again."
 }
 
-export default function ProofCard({ crewId, proof, onChanged }) {
+export default function ProofCard({ crewId, proof, onChanged, highlight = false }) {
   const [picked, setPicked] = useState({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -62,7 +62,7 @@ export default function ProofCard({ crewId, proof, onChanged }) {
   }
 
   return (
-    <section className="card proof">
+    <section id="proof-card" className={`card proof ${highlight ? 'is-highlight' : ''}`}>
       <div className="proof-title">
         <div className="eyebrow">TODAY'S PROOF · KST</div>
         {done && <span className="pit-tag">ALL DONE</span>}

@@ -76,6 +76,10 @@ export const putReminders = (auth, settings) =>
   request('/admin/reminders', { method: 'PUT', headers: basic(auth), body: JSON.stringify(settings) })
 export const runReminders = (auth) => request('/admin/reminders/run', { method: 'POST', headers: basic(auth) })
 
+export const adminVoteLink = (auth) => request('/admin/vote-link', { headers: basic(auth) })
+export const putVoteLink = (auth, url) =>
+  request('/admin/vote-link', { method: 'PUT', headers: basic(auth), body: JSON.stringify({ url }) })
+
 export const adminPush = (auth) => request('/admin/push', { headers: basic(auth) })
 export const sendTestPush = (auth) =>
   request('/admin/push/test', { method: 'POST', headers: basic(auth) })

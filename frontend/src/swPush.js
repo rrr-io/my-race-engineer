@@ -10,18 +10,27 @@ export function onPush(event, registration) {
       body: data.body || '',
       tag: data.tag,
       icon: '/icons/icon-192-v2.png',
-      data: { url: data.url || '/' }
+      actions: Array.isArray(data.actions) ? data.actions : [],
+      data: { url: data.url || '/', voteUrl: data.voteUrl || null }
     })
   )
 }
 
+/** "Open MNET+" opens the vote link; everything else brings the app forward (and to the proof card when asked). */
 export function onNotificationClick(event, clients) {
   event.notification.close()
-  const url = event.notification.data?.url || '/'
+  const { url = '/', voteUrl = null } = event.notification.data || {}
+  if (event.action === 'mnet' && voteUrl) {
+    event.waitUntil(clients.openWindow(voteUrl))
+    return
+  }
+  const wantsProof = event.action === 'proof' || url.includes('proof=1')
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
       const open = windows.find((w) => 'focus' in w)
-      return open ? open.focus() : clients.openWindow(url)
+      if (!open) return clients.openWindow(wantsProof ? '/?proof=1' : url)
+      if (wantsProof) open.postMessage?.({ type: 'proof' })
+      return open.focus()
     })
   )
 }

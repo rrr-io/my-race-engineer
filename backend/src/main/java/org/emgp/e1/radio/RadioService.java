@@ -21,9 +21,11 @@ public class RadioService {
 
     public enum Sender { ENGINEER, RACE_CONTROL }
 
-    public record RadioMessage(Sender from, String text) {}
+    /** kind: LIGHTS_OUT, BRIEFING, PROOF or PIT_STOP, so the app can attach the right buttons. */
+    public record RadioMessage(Sender from, String kind, String text) {}
 
-    public record Radio(Phase phase, boolean pitStop, boolean practice, ProofView proof, List<RadioMessage> messages) {}
+    public record Radio(Phase phase, boolean pitStop, boolean practice, ProofView proof, String voteUrl,
+                        List<RadioMessage> messages) {}
 
     private static final String DEFAULT_TEAM = "default";
     private static final Set<Phase> LIGHTS_OUT_PHASES =
@@ -35,17 +37,17 @@ public class RadioService {
         this.templates = templates;
     }
 
-    public Radio forTeam(Team team, RaceState state, ProofView proof) {
+    public Radio forTeam(Team team, RaceState state, ProofView proof, String voteUrl) {
         Phase phase = state.getPhase();
         List<RadioMessage> messages = new ArrayList<>();
 
-        lightsOut(team, phase).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, text)));
-        briefing(team, proof).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, text)));
-        proofLine(team, proof).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, text)));
+        lightsOut(team, phase).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, "LIGHTS_OUT", text)));
+        briefing(team, proof).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, "BRIEFING", text)));
+        proofLine(team, proof).ifPresent(text -> messages.add(new RadioMessage(Sender.ENGINEER, "PROOF", text)));
         if (state.isPitStop()) {
-            pitStop(phase).ifPresent(text -> messages.add(new RadioMessage(Sender.RACE_CONTROL, text)));
+            pitStop(phase).ifPresent(text -> messages.add(new RadioMessage(Sender.RACE_CONTROL, "PIT_STOP", text)));
         }
-        return new Radio(phase, state.isPitStop(), state.isPractice(), proof, messages);
+        return new Radio(phase, state.isPitStop(), state.isPractice(), proof, voteUrl, messages);
     }
 
     /** The team's Lights Out line, empty for phases that don't have one. */
