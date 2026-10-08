@@ -169,7 +169,7 @@ button { font-family: inherit; }
   font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
 }
 .radio.is-new { cursor: pointer; }
-.radio.is-new .radio-text { box-shadow: 0 0 0 1px var(--accent), 0 0 18px -2px var(--accent); animation: glow 2.4s ease-in-out 3; }
+.radio.is-new .radio-body { box-shadow: 0 0 0 1px var(--accent), 0 0 18px -2px var(--accent); animation: glow 2.4s ease-in-out 3; }
 @keyframes glow { 50% { box-shadow: 0 0 0 1px var(--accent), 0 0 30px 2px var(--accent); } }
 .card.is-highlight { box-shadow: 0 0 0 2px var(--accent), 0 0 24px -2px var(--accent); animation: glow 1.2s ease-in-out 2; }
 .msg-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 14px 12px; background: #000; }
@@ -257,3 +257,7 @@ button { font-family: inherit; }
 .check-item.is-approved .check-name { color: var(--muted); }
 .check-state { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
 .check-item.is-rejected .check-state { color: #FF9B9B; }
+
+.today-dock.is-glow .today-bar { animation: dock-glow 1s ease-in-out 4; }
+@keyframes dock-glow { 50% { box-shadow: inset 0 0 0 2px var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); } }
+.radio-body { display: flex; flex-direction: column; }

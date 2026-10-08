@@ -27,7 +27,7 @@ const Chevron = ({ open }) => (
 )
 
 /** Today's job as a checklist docked at the bottom: one line closed, every category open. */
-export default function TodayChecklist({ radio, line, onProof }) {
+export default function TodayChecklist({ radio, line, onProof, glow = false }) {
   const now = useNow()
   const [open, setOpen] = useState(false)
   const proof = radio?.proof
@@ -47,7 +47,7 @@ export default function TodayChecklist({ radio, line, onProof }) {
   const toProof = () => { setOpen(false); onProof() }
 
   return (
-    <div className={`today-dock ${open ? 'is-open' : ''}`}>
+    <div className={`today-dock ${open ? 'is-open' : ''} ${glow ? 'is-glow' : ''}`}>
       {open && (
         <section className="today-panel" id="today-panel" aria-label="Today checklist">
           {line && (

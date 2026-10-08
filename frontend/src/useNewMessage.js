@@ -20,8 +20,8 @@ const write = (crewId, keys) => {
 }
 
 /**
- * The newest message the fan has not seen yet. Messages count as seen when they tap it, when they leave the
- * app, and on the very first visit (nothing is "new" the first time).
+ * Which messages the fan has not seen yet. They count as seen when the fan taps one, when they leave the app, and
+ * on the very first visit (nothing is "new" the first time).
  */
 export function useNewMessage(crewId, messages) {
   const [seen, setSeen] = useState(() => read(crewId))
@@ -40,6 +40,17 @@ export function useNewMessage(crewId, messages) {
     if (messages && seen === null) markSeen()
   }, [messages, seen, markSeen])
 
+  // a message that left the feed is forgotten, so the same line coming back (a phase again, a second pit stop) is new
+  const present = keys.join('\n')
+  useEffect(() => {
+    if (!messages || !seen) return
+    const now = present ? present.split('\n') : []
+    if (seen.every((k) => now.includes(k))) return
+    const next = seen.filter((k) => now.includes(k))
+    write(crewId, next)
+    setSeen(next)
+  }, [present]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const onHide = () => { if (document.visibilityState === 'hidden') markSeen() }
     document.addEventListener('visibilitychange', onHide)
@@ -47,5 +58,5 @@ export function useNewMessage(crewId, messages) {
   }, [markSeen])
 
   const unseen = seen ? keys.filter((k) => !seen.includes(k)) : []
-  return { newKey: unseen.length ? unseen[unseen.length - 1] : null, dismiss: markSeen }
+  return { isNew: (key) => unseen.includes(key), dismiss: markSeen }
 }

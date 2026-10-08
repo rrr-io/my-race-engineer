@@ -7,17 +7,20 @@ import RaceWeekendBand from '../RaceWeekendBand.jsx'
 import TodayChecklist from '../TodayChecklist.jsx'
 import { phaseInfo } from '../phases.js'
 
+const GLOW_MS = 4000
+
 // Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't.
 const ACTION_PHASES = ['SPRINT_RACE', 'GRAND_PRIX', 'FINAL_LAP']
 
 export default function Home({ team, crewId }) {
   const { radio, offline, reload } = useRadio(crewId)
   const racing = !!radio && ACTION_PHASES.includes(radio.phase) && !radio.pitStop
-  // while racing, the briefing and the proof line live in the Today card, not in the feed
+  // the briefing (go vote) stays in the feed, right above the proof card; while racing the proof line moves to the checklist
   const feed = (radio?.messages ?? []).filter((m) =>
-    m.kind !== 'BRIEFING' && !(racing && m.kind === 'PROOF'))
-  const todayLine = racing ? pickTodayLine(radio) : null
-  const { newKey, dismiss } = useNewMessage(crewId, radio ? feed : undefined)
+    (m.kind !== 'BRIEFING' || racing) && !(racing && m.kind === 'PROOF'))
+  const todayLine = racing ? (radio.messages.find((m) => m.kind === 'PROOF')?.text ?? null) : null
+  const { isNew, dismiss } = useNewMessage(crewId, radio ? feed : undefined)
+  const boardGlow = useBoardGlow(crewId, racing ? `${radio.phase}|${radio.proof?.categories.map((c) => c.id).join(',')}` : null)
   const phase = radio ? phaseInfo(radio.phase) : null
   const [highlight, setHighlight] = useState(false)
   const timer = useRef(null)
@@ -87,35 +90,60 @@ export default function Home({ team, crewId }) {
 
         {feed.map((m) => {
           const key = messageKey(m)
-          const isNew = key === newKey
+          const fresh = isNew(key)
           return (
-            <article className={`radio ${isNew ? 'is-new' : ''}`} key={key} onClick={isNew ? dismiss : undefined}>
+            <article className={`radio ${fresh ? 'is-new' : ''}`} key={key} onClick={fresh ? dismiss : undefined}>
               <div className="radio-head">
                 <div className={`radio-label ${m.from === 'RACE_CONTROL' ? 'is-control' : ''}`}>
                   {m.from === 'RACE_CONTROL' ? 'RADIO · RACE CONTROL' : 'RADIO · ENGINEER'}
                 </div>
-                {isNew && (
+                {fresh && (
                   <span className="new-chip">
                     <span aria-hidden="true">● </span>NEW<span className="sr-only"> message</span>
                   </span>
                 )}
               </div>
-              <p className="radio-text">"{m.text}"</p>
+              <div className="radio-body">
+                <p className="radio-text">"{m.text}"</p>
+                {m.kind === 'BRIEFING' && radio.voteUrl && (
+                  <div className="msg-actions">
+                    <a className="btn-action" href={radio.voteUrl} target="_blank" rel="noopener noreferrer">Open MNET+</a>
+                  </div>
+                )}
+              </div>
             </article>
           )
         })}
 
-        {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight} />}
+        {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} />}
       </main>
 
-      {racing && <TodayChecklist radio={radio} line={todayLine} onProof={goToProof} />}
+      {racing && <TodayChecklist radio={radio} line={todayLine} onProof={goToProof} glow={boardGlow} />}
     </div>
   )
 }
 
-/** The engineer's line for today: a rejection first (it says what to fix), then the briefing, then the proof news. */
-function pickTodayLine(radio) {
-  const byKind = (kind) => radio.messages.find((m) => m.kind === kind)?.text ?? null
-  const rejected = radio.proof?.categories.some((c) => c.state === 'REJECTED')
-  return (rejected && byKind('PROOF')) || byKind('BRIEFING') || byKind('PROOF')
+
+/**
+ * True for a few seconds when the proof card and the checklist show up for something new: a race phase starting, or
+ * a new set of categories. Remembered per fan, so it plays once, also when the app was closed at the time.
+ */
+function useBoardGlow(crewId, board) {
+  const [glow, setGlow] = useState(false)
+  useEffect(() => {
+    const key = `e1.board.${crewId}`
+    if (!board) {
+      // nothing to do right now (Grid, pit stop, Finish Line): forget, so the board glows again when it comes back
+      try { localStorage.removeItem(key) } catch { /* no storage */ }
+      return undefined
+    }
+    let last = null
+    try { last = localStorage.getItem(key) } catch { /* no storage */ }
+    if (last === board) return undefined
+    try { localStorage.setItem(key, board) } catch { /* no storage */ }
+    setGlow(true)
+    const t = setTimeout(() => setGlow(false), GLOW_MS)
+    return () => clearTimeout(t)
+  }, [crewId, board])
+  return glow
 }

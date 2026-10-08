@@ -61,7 +61,6 @@ export default function RaceWeekendBand({ team }) {
       </button>
       {open && (
         <section className="rw-panel" id="rw-panel" aria-label="Race Weekend schedule">
-          <p className="small">"{team.calendarLine}"</p>
           {events?.length === 0 && (
             <p className="muted small">Race Control hasn't posted the dates yet. Subscribe now and they'll show up on their own.</p>
           )}
