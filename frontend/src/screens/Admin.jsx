@@ -4,6 +4,7 @@ import {
   putReminders, putVoteLink, runReminders, sendTestPush, setRace
 } from '../api.js'
 import ProofsPanel from './AdminProofs.jsx'
+import WeekendPanel from './AdminWeekend.jsx'
 import { PHASES, phaseInfo } from '../phases.js'
 
 export default function Admin() {
@@ -80,10 +81,11 @@ function Panel({ auth, onLogout }) {
       <nav className="tabs" role="tablist" aria-label="Race Control sections">
         {tabButton('race', 'Race')}
         {tabButton('proofs', pending ? `Proofs (${pending})` : 'Proofs')}
+        {tabButton('weekend', 'Weekend')}
       </nav>
-      {tab === 'race'
-        ? <RacePanel auth={auth} onLogout={onLogout} />
-        : <ProofsPanel auth={auth} onLogout={onLogout} onCount={setPending} />}
+      {tab === 'race' && <RacePanel auth={auth} onLogout={onLogout} />}
+      {tab === 'proofs' && <ProofsPanel auth={auth} onLogout={onLogout} onCount={setPending} />}
+      {tab === 'weekend' && <WeekendPanel auth={auth} onLogout={onLogout} />}
     </>
   )
 }

@@ -180,3 +180,13 @@ button { font-family: inherit; }
 }
 .btn-action:first-child { background: var(--accent); color: var(--on-accent); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Race Weekend */
+.event-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.event { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); }
+.event-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.event-title { font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.cal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.event-admin { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.event-admin .proof-actions > button { height: 40px; font-size: 15px; }
+.field input[type="datetime-local"] { min-width: 0; width: 100%; }

@@ -30,6 +30,7 @@ export const createCrew = (team) =>
 export const getCrew = (id) => request(`/crew/${id}`)
 export const getRadio = (id) => request(`/crew/${id}/radio`)
 export const getRace = () => request('/race')
+export const getRaceWeekend = () => request('/race-weekend')
 
 const basic = ({ user, password }) => ({
   Authorization: 'Basic ' + btoa(String.fromCharCode(...new TextEncoder().encode(`${user}:${password}`)))
@@ -83,3 +84,11 @@ export const putVoteLink = (auth, url) =>
 export const adminPush = (auth) => request('/admin/push', { headers: basic(auth) })
 export const sendTestPush = (auth) =>
   request('/admin/push/test', { method: 'POST', headers: basic(auth) })
+
+export const adminRaceWeekend = (auth) => request('/admin/race-weekend', { headers: basic(auth) })
+export const createRaceEvent = (auth, event) =>
+  request('/admin/race-weekend', { method: 'POST', headers: basic(auth), body: JSON.stringify(event) })
+export const updateRaceEvent = (auth, id, event) =>
+  request(`/admin/race-weekend/${id}`, { method: 'PUT', headers: basic(auth), body: JSON.stringify(event) })
+export const deleteRaceEvent = (auth, id) =>
+  request(`/admin/race-weekend/${id}`, { method: 'DELETE', headers: basic(auth) })

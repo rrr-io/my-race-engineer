@@ -32,6 +32,9 @@ push:
     private-key: ${VAPID_PRIVATE_KEY:}
     subject: ${VAPID_SUBJECT:https://my-race-engineer.rrriooo.com}
 
+app:
+  url: ${APP_URL:https://my-race-engineer.rrriooo.com}
+
 admin:
   username: ${ADMIN_USER:admin}
   password: ${ADMIN_PASSWORD:admin}

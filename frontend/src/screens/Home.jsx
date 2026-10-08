@@ -3,6 +3,7 @@ import { useRadio } from '../useRadio.js'
 import { messageKey, useNewMessage } from '../useNewMessage.js'
 import NotificationsCard from '../NotificationsCard.jsx'
 import ProofCard from '../ProofCard.jsx'
+import RaceWeekendCard from '../RaceWeekendCard.jsx'
 import { phaseInfo } from '../phases.js'
 
 export default function Home({ team, crewId }) {
@@ -102,6 +103,8 @@ export default function Home({ team, crewId }) {
         })}
 
         <ProofCard crewId={crewId} proof={radio?.proof} onChanged={reload} highlight={highlight} />
+
+        <RaceWeekendCard team={team} />
       </main>
     </div>
   )
