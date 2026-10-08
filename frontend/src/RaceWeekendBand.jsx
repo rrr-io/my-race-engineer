@@ -4,14 +4,21 @@ import { calendarLinks, eventWhen, isLive, localZone } from './raceWeekend.js'
 
 const SHOWN = 4
 
-const Chevron = ({ open }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2"
-       strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>
-    <path d="M6 15l6-6 6 6" />
+const CalendarIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" />
   </svg>
 )
 
-/** The Race Weekend as a band stuck to the bottom: the next date at a glance, the whole schedule on tap. */
+const Chevron = ({ open }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+)
+
+/** The Race Weekend as a band under the header: "Check the race calendar", the schedule on tap. */
 export default function RaceWeekendBand({ team }) {
   const [events, setEvents] = useState(null)
   const [open, setOpen] = useState(false)
@@ -40,6 +47,18 @@ export default function RaceWeekendBand({ team }) {
 
   return (
     <div className={`rw-band ${open ? 'is-open' : ''}`}>
+      <button type="button" className="rw-bar" aria-expanded={open} aria-controls="rw-panel" onClick={() => setOpen(!open)}>
+        <span className="rw-icon"><CalendarIcon /></span>
+        <span className="rw-text">
+          <span className="rw-title">Check the race calendar</span>
+          <span className="rw-next muted">
+            {events === null && 'Loading the schedule…'}
+            {events?.length === 0 && 'Dates coming soon'}
+            {next && <>Next: {next.title} · {isLive(next) ? 'live now' : eventWhen(next)}</>}
+          </span>
+        </span>
+        <Chevron open={open} />
+      </button>
       {open && (
         <section className="rw-panel" id="rw-panel" aria-label="Race Weekend schedule">
           <p className="small">"{team.calendarLine}"</p>
@@ -70,17 +89,6 @@ export default function RaceWeekendBand({ team }) {
           <p className="muted small">Subscribe once: changes update on their own, with a heads-up 30 minutes before.</p>
         </section>
       )}
-      <button type="button" className="rw-bar" aria-expanded={open} aria-controls="rw-panel" onClick={() => setOpen(!open)}>
-        <span className="rw-text">
-          <span className="eyebrow">RACE WEEKEND</span>
-          <span className="rw-next">
-            {events === null && 'Loading the schedule…'}
-            {events?.length === 0 && 'Dates coming soon'}
-            {next && <><b>{next.title}</b> · {isLive(next) ? 'live now' : eventWhen(next)}</>}
-          </span>
-        </span>
-        <Chevron open={open} />
-      </button>
     </div>
   )
 }

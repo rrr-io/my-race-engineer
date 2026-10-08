@@ -4,7 +4,7 @@ import { messageKey, useNewMessage } from '../useNewMessage.js'
 import NotificationsCard from '../NotificationsCard.jsx'
 import ProofCard from '../ProofCard.jsx'
 import RaceWeekendBand from '../RaceWeekendBand.jsx'
-import TodayStrip from '../TodayStrip.jsx'
+import TodayChecklist from '../TodayChecklist.jsx'
 import { phaseInfo } from '../phases.js'
 
 // Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't.
@@ -50,7 +50,7 @@ export default function Home({ team, crewId }) {
   }, [goToProof])
 
   return (
-    <div className="screen home" style={{ '--accent': team.accent }}>
+    <div className={`screen home ${racing ? 'has-dock' : ''}`} style={{ '--accent': team.accent }}>
       <header className="home-head">
         <div>
           <div className="eyebrow">RACE ENGINEER</div>
@@ -75,7 +75,7 @@ export default function Home({ team, crewId }) {
         </div>
       )}
 
-      {racing && <TodayStrip radio={radio} line={todayLine} onProof={goToProof} />}
+      <RaceWeekendBand team={team} />
 
       <main className="feed">
         <article className="radio">
@@ -108,7 +108,7 @@ export default function Home({ team, crewId }) {
         {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight} />}
       </main>
 
-      <RaceWeekendBand team={team} />
+      {racing && <TodayChecklist radio={radio} line={todayLine} onProof={goToProof} />}
     </div>
   )
 }
