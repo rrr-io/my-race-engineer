@@ -87,6 +87,7 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false 
               <strong>{c.name}</strong>
               <span className="pit-tag">{TAGS[c.state]}</span>
             </div>
+            {c.state === 'PENDING' && <p className="muted small">In review by Race Control. You'll get a radio call with the result.</p>}
             {c.state === 'REJECTED' && <p className="error small">Rejected: {c.reason}</p>}
             {mine.length > 0 && (
               <div className="thumbs">
@@ -103,10 +104,11 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false 
               <>
                 <input id={`proof-file-${c.id}`} type="file" accept="image/*" multiple hidden
                        onChange={(e) => onPick(c, e)} />
-                <button type="button" className="btn-secondary" disabled={busy}
+                <button type="button" className="btn-secondary" disabled={busy || c.count + mine.length >= maxPerCategory}
                         onClick={() => document.getElementById(`proof-file-${c.id}`).click()}>
                   {mine.length || c.count ? 'Add another screenshot' : 'Choose screenshots'}
                 </button>
+                <p className="muted small">{c.count + mine.length} of {maxPerCategory} screenshots today</p>
               </>
             )}
           </div>
@@ -115,8 +117,11 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false 
 
       {categories.length > 0 && !done && (
         <button type="button" className="btn-primary" disabled={!total || busy} onClick={send}>
-          {busy ? 'Sending…' : 'Send proof'}
+          {busy ? 'Sending…' : total ? `Send proof (${total})` : 'Send proof'}
         </button>
+      )}
+      {categories.length > 0 && !done && total > 0 && (
+        <p className="muted small">Up to {maxPerSubmission} screenshots per send.</p>
       )}
       {error && <p className="error" role="alert">{error}</p>}
     </section>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import {
-  adminCategories, adminCheck, adminProofs, adminPush, adminReminders, adminVoteLink, getRace, putCategories,
-  putReminders, putVoteLink, runReminders, sendTestPush, setRace
+  adminCategories, adminCheck, adminProofs, adminPush, adminReminders, adminVoteLink, putCategories,
+  putReminders, putVoteLink, runReminders, sendTestPush
 } from '../api.js'
+import LivePanel from './AdminLive.jsx'
 import ProofsPanel from './AdminProofs.jsx'
 import WeekendPanel from './AdminWeekend.jsx'
-import { PHASES, phaseInfo } from '../phases.js'
 
 export default function Admin() {
   const [auth, setAuth] = useState(null)
@@ -62,7 +62,7 @@ function Login({ onLogin }) {
 }
 
 function Panel({ auth, onLogout }) {
-  const [tab, setTab] = useState('race')
+  const [tab, setTab] = useState('live')
   const [pending, setPending] = useState(null)
 
   useEffect(() => {
@@ -79,11 +79,13 @@ function Panel({ auth, onLogout }) {
   return (
     <>
       <nav className="tabs" role="tablist" aria-label="Race Control sections">
-        {tabButton('race', 'Race')}
+        {tabButton('live', 'Live')}
         {tabButton('proofs', pending ? `Proofs (${pending})` : 'Proofs')}
         {tabButton('weekend', 'Weekend')}
+        {tabButton('setup', 'Setup')}
       </nav>
-      {tab === 'race' && <RacePanel auth={auth} onLogout={onLogout} />}
+      {tab === 'live' && <LivePanel auth={auth} onLogout={onLogout} />}
+      {tab === 'setup' && <SetupPanel auth={auth} onLogout={onLogout} />}
       {tab === 'proofs' && <ProofsPanel auth={auth} onLogout={onLogout} onCount={setPending} />}
       {tab === 'weekend' && <WeekendPanel auth={auth} onLogout={onLogout} />}
     </>
@@ -92,9 +94,8 @@ function Panel({ auth, onLogout }) {
 
 const remKey = (r) => JSON.stringify([r.enabled, Number(r.intervalHours), r.windowStart, r.windowEnd])
 
-function RacePanel({ auth, onLogout }) {
-  const [race, setRaceState] = useState(null)
-  const [picked, setPicked] = useState(null)
+/** What changes between stages, not during them: categories, the MNET+ link, notifications, reminders. */
+function SetupPanel({ auth, onLogout }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [push, setPush] = useState(null)
@@ -116,29 +117,7 @@ function RacePanel({ auth, onLogout }) {
     adminCategories(auth)
       .then((r) => { const text = r.categories.map((c) => c.name).join('\n'); setCatText(text); setCatServer(text) })
       .catch(() => {})
-    getRace()
-      .then((r) => { setRaceState(r); setPicked(r.phase) })
-      .catch(() => setError("Can't load the race state."))
   }, [])
-
-  const apply = async (body) => {
-    setBusy(true); setError(null)
-    try {
-      const r = await setRace(auth, body)
-      setRaceState(r)
-      setPicked(r.phase)
-    } catch (err) {
-      if (err.status === 401) { onLogout(); return }
-      if (err.status === 409) {
-        setError('End the pit stop before changing stage.')
-        getRace().then((r) => { setRaceState(r); setPicked(r.phase) }).catch(() => {})
-        return
-      }
-      setError("Couldn't save. Try again.")
-    } finally {
-      setBusy(false)
-    }
-  }
 
   const saveCategories = async () => {
     setBusy(true); setError(null); setCatSaved(null)
@@ -208,46 +187,8 @@ function RacePanel({ auth, onLogout }) {
     }
   }
 
-  const togglePractice = () => {
-    const next = !race.practice
-    const ok = window.confirm(`${next ? 'Start' : 'End'} free practice? This resets the phase to Grid for everyone.`)
-    if (ok) apply({ practice: next })
-  }
-
-  if (!race) return <p className="admin-body muted">{error ?? 'Loading…'}</p>
-
-  const frozen = race.pitStop
-
   return (
     <div className="admin-body">
-      <section className="card">
-        <div className="eyebrow">CURRENT PHASE</div>
-        <div className="admin-current">
-          {phaseInfo(race.phase).label}
-          {race.practice && <span className="pit-tag">FREE PRACTICE</span>}
-          {race.pitStop && <span className="pit-tag">PIT STOP</span>}
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="eyebrow">SET PHASE</div>
-        {frozen && <p className="muted small">Pit stop is on. End it to change stage.</p>}
-        <div className="phase-list" role="radiogroup" aria-label="Race phase">
-          {PHASES.map((p) => (
-            <button key={p.key} type="button" role="radio" aria-checked={picked === p.key} disabled={frozen}
-                    className={`phase-option ${picked === p.key ? 'is-picked' : ''}`}
-                    onClick={() => setPicked(p.key)}>
-              <span>{p.label}</span>
-              <span className="muted small">{p.blurb}</span>
-            </button>
-          ))}
-        </div>
-        <button className="btn-primary" disabled={busy || frozen || picked === race.phase}
-                onClick={() => apply({ phase: picked })}>
-          Set phase
-        </button>
-      </section>
-
       <section className="card">
         <div className="eyebrow">VOTING CATEGORIES</div>
         <p className="muted small">
@@ -279,24 +220,6 @@ function RacePanel({ auth, onLogout }) {
           Save link
         </button>
         {voteSaved && <p className="muted small">{voteSaved}</p>}
-      </section>
-
-      <section className="card">
-        <div className="eyebrow">FREE PRACTICE</div>
-        {frozen && <p className="muted small">Pit stop is on. End it to switch free practice.</p>}
-        <p className="muted small">Marks the race as a simulation. Switching it on or off resets the phase to Grid.</p>
-        <button className="btn-secondary" disabled={busy || frozen} onClick={togglePractice}>
-          {race.practice ? 'End free practice' : 'Start free practice'}
-        </button>
-      </section>
-
-      <section className="card">
-        <div className="eyebrow">PIT STOP</div>
-        <p className="muted small">Pauses the race for everyone and posts a Race Control message in the app.</p>
-        <button className="btn-secondary" disabled={busy}
-                onClick={() => apply({ pitStop: !race.pitStop })}>
-          {race.pitStop ? 'End pit stop' : 'Start pit stop'}
-        </button>
       </section>
 
       <section className="card">

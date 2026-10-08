@@ -37,6 +37,12 @@ const basic = ({ user, password }) => ({
 })
 
 export const adminCheck = (auth) => request('/admin/session', { headers: basic(auth) })
+export const previewRace = (auth, { phase, pitStop } = {}) => {
+  const q = new URLSearchParams()
+  if (phase) q.set('phase', phase)
+  if (pitStop !== undefined) q.set('pitStop', String(pitStop))
+  return request(`/admin/race/preview?${q}`, { headers: basic(auth) })
+}
 export const setRace = (auth, body) =>
   request('/admin/race', { method: 'PUT', headers: basic(auth), body: JSON.stringify(body) })
 
