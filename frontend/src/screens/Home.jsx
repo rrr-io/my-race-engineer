@@ -4,6 +4,7 @@ import { messageKey, useNewMessage } from '../useNewMessage.js'
 import NotificationsCard from '../NotificationsCard.jsx'
 import ProofCard from '../ProofCard.jsx'
 import RaceWeekendCard from '../RaceWeekendCard.jsx'
+import TodayStrip from '../TodayStrip.jsx'
 import { phaseInfo } from '../phases.js'
 
 export default function Home({ team, crewId }) {
@@ -65,6 +66,8 @@ export default function Home({ team, crewId }) {
           </span>
         </div>
       )}
+
+      <TodayStrip radio={radio} onProof={goToProof} />
 
       <main className="feed">
         <article className="radio">

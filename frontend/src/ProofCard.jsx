@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { submitProof } from './api.js'
 import { prepareImage } from './images.js'
+import { lapLine } from './lap.js'
+import { useNow } from './useNow.js'
 
 const TAGS = { MISSING: 'TO DO', PENDING: 'IN BETA TESTING', APPROVED: 'APPROVED', REJECTED: 'TO REDO' }
 
@@ -15,6 +17,7 @@ const messageFor = (err) => {
 export default function ProofCard({ crewId, proof, onChanged, highlight = false }) {
   const [picked, setPicked] = useState({})
   const [busy, setBusy] = useState(false)
+  const now = useNow()
   const [error, setError] = useState(null)
   const latest = useRef(picked)
   latest.current = picked
@@ -67,6 +70,7 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false 
         <div className="eyebrow">TODAY'S PROOF · KST</div>
         {done && <span className="pit-tag">ALL DONE</span>}
       </div>
+      {categories.length > 0 && <p className="muted small">The proof day follows Korea time. {lapLine(now)}.</p>}
       {categories.length === 0 && (
         <p className="muted small">Race Control hasn't announced today's categories yet. Check back soon.</p>
       )}

@@ -190,3 +190,19 @@ button { font-family: inherit; }
 .event-admin { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 .event-admin .proof-actions > button { height: 40px; font-size: 15px; }
 .field input[type="datetime-local"] { min-width: 0; width: 100%; }
+
+/* Today strip: the day's job at the top of the home */
+.today {
+  margin: 14px 20px 0; padding: 14px 16px; border-radius: 10px; background: var(--surface);
+  border-left: 4px solid var(--accent); display: flex; flex-direction: column; gap: 10px;
+}
+.today-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.today-headline { font-size: 20px; font-weight: 700; line-height: 1.2; }
+.today-meter { display: flex; gap: 4px; padding-top: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 45%; }
+.seg { width: 18px; height: 6px; border-radius: 3px; background: #3A3D45; }
+.seg.is-approved { background: var(--accent); }
+.seg.is-pending { background: var(--accent); opacity: 0.45; }
+.seg.is-rejected { background: #FF9B9B; }
+.today-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.today-soon { color: var(--accent); font-weight: 700; }
+.onboarding .eyebrow { margin-bottom: 6px; }

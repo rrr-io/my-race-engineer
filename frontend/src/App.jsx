@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { clearCrewId, createCrew, getCrew, storeCrewId, storedCrewId } from './api.js'
 import { teamBySlug } from './teams.js'
 import Onboarding from './screens/Onboarding.jsx'
 import Home from './screens/Home.jsx'
+import RadioCheck from './screens/RadioCheck.jsx'
 
 export default function App() {
   const [crew, setCrew] = useState(null)
@@ -23,8 +24,10 @@ export default function App() {
     const c = await createCrew(slug)
     storeCrewId(c.id)
     setCrew(c)
-    setStatus('ready')
+    setStatus('radio')
   }
+
+  const radioDone = useCallback(() => setStatus('ready'), [])
 
   if (status === 'loading') return <div className="screen center muted">Connecting to the pit wall…</div>
   if (status === 'offline') {
@@ -36,5 +39,6 @@ export default function App() {
     )
   }
   if (status === 'onboarding') return <Onboarding onJoin={join} />
+  if (status === 'radio') return <RadioCheck team={teamBySlug(crew.team)} crewId={crew.id} onDone={radioDone} />
   return <Home team={teamBySlug(crew.team)} crewId={crew.id} />
 }
