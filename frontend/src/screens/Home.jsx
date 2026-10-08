@@ -3,13 +3,21 @@ import { useRadio } from '../useRadio.js'
 import { messageKey, useNewMessage } from '../useNewMessage.js'
 import NotificationsCard from '../NotificationsCard.jsx'
 import ProofCard from '../ProofCard.jsx'
-import RaceWeekendCard from '../RaceWeekendCard.jsx'
+import RaceWeekendBand from '../RaceWeekendBand.jsx'
 import TodayStrip from '../TodayStrip.jsx'
 import { phaseInfo } from '../phases.js'
 
+// Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't.
+const ACTION_PHASES = ['SPRINT_RACE', 'GRAND_PRIX', 'FINAL_LAP']
+
 export default function Home({ team, crewId }) {
   const { radio, offline, reload } = useRadio(crewId)
-  const { newKey, dismiss } = useNewMessage(crewId, radio?.messages)
+  const racing = !!radio && ACTION_PHASES.includes(radio.phase) && !radio.pitStop
+  // while racing, the briefing and the proof line live in the Today card, not in the feed
+  const feed = (radio?.messages ?? []).filter((m) =>
+    m.kind !== 'BRIEFING' && !(racing && m.kind === 'PROOF'))
+  const todayLine = racing ? pickTodayLine(radio) : null
+  const { newKey, dismiss } = useNewMessage(crewId, radio ? feed : undefined)
   const phase = radio ? phaseInfo(radio.phase) : null
   const [highlight, setHighlight] = useState(false)
   const timer = useRef(null)
@@ -67,7 +75,7 @@ export default function Home({ team, crewId }) {
         </div>
       )}
 
-      <TodayStrip radio={radio} onProof={goToProof} />
+      {racing && <TodayStrip radio={radio} line={todayLine} onProof={goToProof} />}
 
       <main className="feed">
         <article className="radio">
@@ -77,7 +85,7 @@ export default function Home({ team, crewId }) {
 
         <NotificationsCard crewId={crewId} />
 
-        {radio?.messages.map((m) => {
+        {feed.map((m) => {
           const key = messageKey(m)
           const isNew = key === newKey
           return (
@@ -93,22 +101,21 @@ export default function Home({ team, crewId }) {
                 )}
               </div>
               <p className="radio-text">"{m.text}"</p>
-              {m.kind === 'BRIEFING' && (
-                <div className="msg-actions">
-                  {radio.voteUrl && (
-                    <a className="btn-action" href={radio.voteUrl} target="_blank" rel="noopener noreferrer">Open MNET+</a>
-                  )}
-                  <button type="button" className="btn-action" onClick={goToProof}>Upload proof</button>
-                </div>
-              )}
             </article>
           )
         })}
 
-        <ProofCard crewId={crewId} proof={radio?.proof} onChanged={reload} highlight={highlight} />
-
-        <RaceWeekendCard team={team} />
+        {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight} />}
       </main>
+
+      <RaceWeekendBand team={team} />
     </div>
   )
+}
+
+/** The engineer's line for today: a rejection first (it says what to fix), then the briefing, then the proof news. */
+function pickTodayLine(radio) {
+  const byKind = (kind) => radio.messages.find((m) => m.kind === kind)?.text ?? null
+  const rejected = radio.proof?.categories.some((c) => c.state === 'REJECTED')
+  return (rejected && byKind('PROOF')) || byKind('BRIEFING') || byKind('PROOF')
 }

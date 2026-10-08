@@ -2,7 +2,7 @@ import { lapLine, lapSoon } from './lap.js'
 import { useNow } from './useNow.js'
 
 /** What to do today, at the top of the home: progress, one main action, when the next lap starts. */
-export default function TodayStrip({ radio, onProof }) {
+export default function TodayStrip({ radio, line, onProof }) {
   const now = useNow()
   const proof = radio?.proof
   if (!proof || proof.categories.length === 0) return null
@@ -36,6 +36,13 @@ export default function TodayStrip({ radio, onProof }) {
           {categories.map((c) => <span key={c.id} className={`seg is-${c.state.toLowerCase()}`} />)}
         </div>
       </div>
+
+      {line && (
+        <p className="today-radio">
+          <span className="today-from">ENGINEER</span>
+          <span>"{line}"</span>
+        </p>
+      )}
 
       {missing > 0 && (
         <div className="today-actions">

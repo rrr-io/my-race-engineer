@@ -26,9 +26,9 @@ button { font-family: inherit; }
 .error { color: #FF9B9B; margin: 0; }
 
 .btn-primary {
-  height: 52px; width: 100%; border: none; border-radius: 8px;
+  height: 44px; width: 100%; border: none; border-radius: 6px;
   background: var(--accent); color: var(--on-accent);
-  font-size: 17px; font-weight: 700; letter-spacing: 0.02em; cursor: pointer;
+  font-size: 16px; font-weight: 700; letter-spacing: 0.02em; cursor: pointer;
 }
 .btn-primary:disabled { background: #2A2D34; color: var(--muted); cursor: not-allowed; }
 
@@ -121,8 +121,8 @@ button { font-family: inherit; }
 .phase-option .small { font-weight: 400; }
 .phase-option.is-picked { border-color: var(--accent); }
 .btn-secondary {
-  height: 48px; border-radius: 8px; border: 1px solid #3A3D45; background: transparent;
-  color: var(--text); font-size: 16px; font-weight: 700; cursor: pointer;
+  height: 40px; border-radius: 6px; border: 1px solid #3A3D45; background: transparent;
+  color: var(--text); font-size: 15px; font-weight: 700; cursor: pointer;
 }
 .btn-secondary:disabled { color: var(--muted); cursor: not-allowed; }
 .btn-link { align-self: center; padding: 8px; background: none; border: none; color: var(--muted); font-size: 15px; cursor: pointer; }
@@ -131,7 +131,7 @@ button { font-family: inherit; }
 
 .tabs { display: flex; gap: 8px; padding: 12px 20px 0; }
 .tab {
-  height: 40px; padding: 0 16px; border-radius: 20px; border: 1px solid #3A3D45;
+  height: 34px; padding: 0 12px; border-radius: 4px; border: 1px solid #3A3D45;
   background: transparent; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer;
 }
 .tab.is-active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
@@ -144,7 +144,7 @@ button { font-family: inherit; }
 .proof-actions > button { flex: 1; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip {
-  height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid #3A3D45;
+  height: 30px; padding: 0 12px; border-radius: 4px; border: 1px solid #3A3D45;
   background: transparent; color: var(--text); font-size: 13px; cursor: pointer;
 }
 
@@ -174,9 +174,9 @@ button { font-family: inherit; }
 .card.is-highlight { box-shadow: 0 0 0 2px var(--accent), 0 0 24px -2px var(--accent); animation: glow 1.2s ease-in-out 2; }
 .msg-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 14px 12px; background: #000; }
 .btn-action {
-  display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 16px;
-  border: 1px solid var(--accent); border-radius: 20px; background: transparent; color: var(--text);
-  font-family: inherit; font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 12px;
+  border: 1px solid var(--accent); border-radius: 4px; background: transparent; color: var(--text);
+  font-family: inherit; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer;
 }
 .btn-action:first-child { background: var(--accent); color: var(--on-accent); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -194,7 +194,7 @@ button { font-family: inherit; }
 /* Today strip: the day's job at the top of the home */
 .today {
   margin: 14px 20px 0; padding: 14px 16px; border-radius: 10px; background: var(--surface);
-  border-left: 4px solid var(--accent); display: flex; flex-direction: column; gap: 10px;
+  border: 1px solid #2E3138; display: flex; flex-direction: column; gap: 10px;
 }
 .today-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .today-headline { font-size: 20px; font-weight: 700; line-height: 1.2; }
@@ -214,3 +214,26 @@ button { font-family: inherit; }
 .preview-list li { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); }
 .preview-team { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
 .tabs { flex-wrap: wrap; }
+
+.today-radio { margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.4; }
+.today-from { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--accent); }
+
+/* Race Weekend band, stuck to the bottom */
+.home { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+.rw-band {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; margin: 0 auto; max-width: 480px;
+  background: var(--surface); border-top: 1px solid #2E3138;
+  padding-bottom: env(safe-area-inset-bottom, 0px); display: flex; flex-direction: column;
+}
+.rw-band.is-open { box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.5); }
+.rw-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+  min-height: 60px; padding: 10px 20px; background: none; border: none; color: var(--text); text-align: left; cursor: pointer;
+}
+.rw-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rw-next { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rw-panel {
+  max-height: 60vh; overflow-y: auto; padding: 16px 20px 4px; display: flex; flex-direction: column; gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.rw-panel p { margin: 0; }
