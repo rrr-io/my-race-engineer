@@ -12,7 +12,7 @@ export function practiceProof(state = 'MISSING') {
   return {
     day: 'DEMO', done: state === 'APPROVED', needsAction: ['MISSING', 'REJECTED'].includes(state),
     maxPerSubmission: 1, maxPerCategory: 5, latestProofId: null,
-    categories: [{ id: 1, name: 'Practice category', state, count: state === 'MISSING' ? 0 : 1,
+    categories: [{ id: 1, name: 'Practice category', state, count: state === 'MISSING' ? 0 : 1, remaining: state === 'APPROVED' ? 0 : 1,
       reason: state === 'REJECTED' ? 'Example: wrong certificate. Choose the sample again to correct it.' : null }]
   }
 }

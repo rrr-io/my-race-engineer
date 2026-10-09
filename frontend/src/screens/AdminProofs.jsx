@@ -174,7 +174,7 @@ function ProofImage({ auth, id }) {
   if (!url) return <div className="proof-img" aria-busy="true" />
   return (
     <a href={url} target="_blank" rel="noreferrer">
-      <img className="proof-img" src={url} alt="Screenshot sent by the fan" />
+      <img className="proof-img" src={url} alt="Original certificate sent by the fan" />
     </a>
   )
 }

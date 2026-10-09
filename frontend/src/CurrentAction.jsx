@@ -15,6 +15,9 @@ export default function CurrentAction({ radio, onProof }) {
     else if (counts.APPROVED) { title = 'All done for today'; detail = 'Your proofs are approved. Follow Race Control for the next voting session.' }
     else { title = 'Waiting for voting categories'; detail = 'Race Control has not published the categories yet.' }
   }
+  const exhausted = racing && counts.REJECTED > 0 && radio.proof.categories
+    .filter((category) => category.state === 'REJECTED').every((category) => category.remaining === 0)
+  if (exhausted) { title = 'Ask Race Control for help'; detail = 'The correction limit was reached. Review the rejection reason and contact your team through its usual channel.' }
   return (
     <section className="card" aria-labelledby="next-action-title">
       <div className="eyebrow">YOUR NEXT ACTION</div>

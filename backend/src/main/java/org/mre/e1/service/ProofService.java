@@ -79,7 +79,7 @@ public class ProofService {
     }
 
     /**
-     * Any number of screenshots, each tagged with its category. A category that is already approved is closed;
+     * Any number of certificates, each tagged with its category. A category that is already approved is closed;
      * the others accept more until the daily cap per category.
      */
     @Transactional
@@ -93,7 +93,7 @@ public class ProofService {
         crew.lockForProof(crewId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (files.isEmpty() || files.size() != categoryIds.size() || files.size() > maxPerSubmission) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Send between 1 and " + maxPerSubmission + " screenshots, each with its category");
+                    "Send between 1 and " + maxPerSubmission + " certificates, each with its category");
         }
         Map<Long, Category> active = categories.active().stream()
                 .collect(Collectors.toMap(Category::getId, Function.identity()));
@@ -103,7 +103,7 @@ public class ProofService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown category");
             }
             if (files.get(i).length > maxImageBytes) {
-                throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Screenshot too large");
+                throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Certificate too large");
             }
             types.add(ImageType.detect(files.get(i)).orElseThrow(() ->
                     new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG and WebP images are accepted")));
@@ -119,8 +119,8 @@ public class ProofService {
             if (category.state() == ProofState.APPROVED) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, category.name() + " is already approved");
             }
-            if (category.count() + entry.getValue() > maxPerCategory) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Too many screenshots for " + category.name() + " today");
+            if (entry.getValue() > category.remaining()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Too many certificates for " + category.name() + " today");
             }
         }
 
@@ -137,7 +137,7 @@ public class ProofService {
             return progress(crewId, day, raceState.isPractice());
         } catch (IOException e) {
             stored.forEach(storage::deleteQuietly);
-            throw new IllegalStateException("Could not store the screenshots", e);
+            throw new IllegalStateException("Could not store the certificates", e);
         } catch (RuntimeException e) {
             stored.forEach(storage::deleteQuietly);
             throw e;
@@ -217,8 +217,13 @@ public class ProofService {
         for (Category category : categories.active()) {
             List<Proof> mine = ofTheDay.stream().filter(p -> p.getCategoryId().equals(category.getId())).toList();
             ProofState state = stateOf(mine);
+            // Rejections free an active slot, but all attempts remain in the audit history.
+            // Bound corrections to twice the ordinary cap, rather than allowing unlimited retries.
+            long active = mine.stream().filter(p -> p.getStatus() != ProofStatus.REJECTED).count();
+            int remaining = state == ProofState.APPROVED ? 0 : Math.max(0,
+                    Math.min(maxPerCategory - (int) active, 2 * maxPerCategory - mine.size()));
             rows.add(new ProofView.CategoryProgress(category.getId(), category.getName(), state,
-                    state == ProofState.REJECTED ? lastReason(mine) : null, mine.size()));
+                    state == ProofState.REJECTED ? lastReason(mine) : null, mine.size(), remaining));
         }
         boolean done = !rows.isEmpty() && rows.stream().allMatch(r -> r.state() == ProofState.APPROVED);
         boolean needsAction = rows.stream().anyMatch(r -> r.state() == ProofState.MISSING || r.state() == ProofState.REJECTED);
