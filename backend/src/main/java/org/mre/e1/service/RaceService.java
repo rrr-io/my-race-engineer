@@ -24,19 +24,13 @@ public class RaceService {
         return repository.findById(ROW_ID).orElseThrow();
     }
 
-    /** Keep phase and practice stable until the proof transaction commits. */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
-    public RaceState lockForProof() {
-        return repository.lockForProof();
-    }
-
     /**
      * While a pit stop is on the stage is frozen: neither a new phase nor switching free practice (which resets the
      * phase) is accepted, unless the same request ends the pit stop.
      */
     @Transactional
     public RaceState update(Phase phase, Boolean pitStop, Boolean practice) {
-        RaceState state = repository.lockForUpdate();
+        RaceState state = repository.findById(ROW_ID).orElseThrow();
         boolean endsPitStop = Boolean.FALSE.equals(pitStop);
         boolean changesStage = (phase != null && phase != state.getPhase())
                 || (practice != null && practice != state.isPractice());

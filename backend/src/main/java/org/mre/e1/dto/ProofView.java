@@ -10,5 +10,5 @@ import java.util.List;
 public record ProofView(LocalDate day, boolean done, boolean needsAction, List<CategoryProgress> categories,
                         int maxPerSubmission, int maxPerCategory, Long latestProofId) {
 
-    public record CategoryProgress(long id, String name, ProofState state, String reason, int count, int remaining) {}
+    public record CategoryProgress(long id, String name, ProofState state, String reason, int count) {}
 }

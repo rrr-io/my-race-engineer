@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.UUID;
 
-/** Certificates on disk, one flat folder. File names are generated here, never taken from the client. */
+/** Screenshots on disk, one flat folder. File names are generated here, never taken from the client. */
 @Component
 public class ProofStorage {
 

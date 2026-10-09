@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-/** One original certificate, for one category, on one Korean day, with its own review. */
+/** One screenshot, for one category, on one Korean day, with its own review. */
 @Entity
 @Table(name = "proof")
 public class Proof {

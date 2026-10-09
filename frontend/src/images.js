@@ -1,12 +1,21 @@
-export const MAX_CERTIFICATE_BYTES = 8 * 1024 * 1024
+const MAX_SIDE = 1600
+const QUALITY = 0.82
 
-// Validate without canvas, re-encoding, resizing or changing the uploaded bytes.
-export async function validateOriginalCertificate(file) {
-  if (file.size > MAX_CERTIFICATE_BYTES) throw new Error('The original certificate exceeds 8 MB. Check the source file; do not compress or edit the proof.')
-  const data = new Uint8Array(await file.slice(0, 12).arrayBuffer())
-  const jpeg = data.length >= 3 && data[0] === 255 && data[1] === 216 && data[2] === 255
-  const png = [137, 80, 78, 71, 13, 10, 26, 10].every((byte, i) => data[i] === byte)
-  const webp = data.length >= 12 && String.fromCharCode(...data.slice(0, 4)) === 'RIFF' && String.fromCharCode(...data.slice(8, 12)) === 'WEBP'
-  if (!jpeg && !png && !webp) throw new Error('Choose an original JPEG, PNG or WebP certificate.')
-  return file
+/** Shrinks a screenshot before upload (phones produce multi-megabyte PNGs). Falls back to the original on any problem. */
+export async function prepareImage(file) {
+  try {
+    if (typeof createImageBitmap !== 'function') return file
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close?.()
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', QUALITY))
+    if (!blob || blob.size >= file.size) return file
+    return new File([blob], (file.name || 'screenshot').replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' })
+  } catch {
+    return file
+  }
 }

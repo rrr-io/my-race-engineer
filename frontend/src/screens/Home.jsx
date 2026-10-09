@@ -4,7 +4,6 @@ import { messageKey, useNewMessage } from '../useNewMessage.js'
 import NotificationsCard from '../NotificationsCard.jsx'
 import ProofCard from '../ProofCard.jsx'
 import RaceWeekendBand from '../RaceWeekendBand.jsx'
-import CurrentAction from '../CurrentAction.jsx'
 import TodayChecklist from '../TodayChecklist.jsx'
 import { phaseInfo } from '../phases.js'
 
@@ -13,7 +12,7 @@ const GLOW_MS = 4000
 // Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't.
 const ACTION_PHASES = ['SPRINT_RACE', 'GRAND_PRIX', 'FINAL_LAP']
 
-export default function Home({ team, crewId, onPractice }) {
+export default function Home({ team, crewId }) {
   const { radio, offline, reload } = useRadio(crewId)
   const racing = !!radio && ACTION_PHASES.includes(radio.phase) && !radio.pitStop
   // the briefing (go vote) stays in the feed, right above the proof card; while racing the proof line moves to the checklist
@@ -79,8 +78,15 @@ export default function Home({ team, crewId, onPractice }) {
         </div>
       )}
 
+      <RaceWeekendBand team={team} />
+
       <main className="feed">
-        <CurrentAction radio={radio} onProof={goToProof} />
+        <article className="radio">
+          <div className="radio-label">RADIO · ENGINEER</div>
+          <p className="radio-text">"{team.welcome}"</p>
+        </article>
+
+        <NotificationsCard crewId={crewId} />
 
         {feed.map((m) => {
           const key = messageKey(m)
@@ -109,13 +115,7 @@ export default function Home({ team, crewId, onPractice }) {
           )
         })}
 
-        {radio && <div hidden={!racing}>
-          <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} />
-        </div>}
-        <RaceWeekendBand team={team} />
-        <Welcome team={team} crewId={crewId} />
-        <NotificationsCard crewId={crewId} />
-        <button type="button" className="btn-secondary" onClick={onPractice}>Try guided Free Practice</button>
+        {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} />}
       </main>
 
       {racing && <TodayChecklist radio={radio} line={todayLine} onProof={goToProof} glow={boardGlow} />}
@@ -146,18 +146,4 @@ function useBoardGlow(crewId, board) {
     return () => clearTimeout(t)
   }, [crewId, board])
   return glow
-}
-
-function Welcome({ team, crewId }) {
-  const key = `e1.welcome.${crewId}`
-  const [open, setOpen] = useState(() => {
-    try { return localStorage.getItem(key) !== 'seen' } catch { return true }
-  })
-  useEffect(() => { try { localStorage.setItem(key, 'seen') } catch { /* optional preference */ } }, [key])
-  return (
-    <details className="radio" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
-      <summary className="radio-label">YOUR ENGINEER · WELCOME</summary>
-      <p className="radio-text">"{team.welcome}"</p>
-    </details>
-  )
 }

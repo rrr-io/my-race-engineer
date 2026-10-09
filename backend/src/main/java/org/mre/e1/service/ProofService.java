@@ -75,25 +75,18 @@ public class ProofService {
 
     @Transactional(readOnly = true)
     public ProofView today(UUID crewId) {
-        return progress(crewId, today(), race.get().isPractice());
+        return progress(crewId, today());
     }
 
     /**
-     * Any number of certificates, each tagged with its category. A category that is already approved is closed;
+     * Any number of screenshots, each tagged with its category. A category that is already approved is closed;
      * the others accept more until the daily cap per category.
      */
     @Transactional
     public ProofView submit(UUID crewId, List<byte[]> files, List<Long> categoryIds) {
-        RaceState raceState = race.lockForProof();
-        if (raceState.isPitStop() || !java.util.Set.of(Phase.SPRINT_RACE, Phase.GRAND_PRIX, Phase.FINAL_LAP)
-                .contains(raceState.getPhase())) {
-            throw new ResponseStatusException(HttpStatus.LOCKED, "Proof submissions are paused");
-        }
-        // Serialize submissions by the same fan so concurrent requests cannot bypass the daily cap.
-        crew.lockForProof(crewId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (files.isEmpty() || files.size() != categoryIds.size() || files.size() > maxPerSubmission) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Send between 1 and " + maxPerSubmission + " certificates, each with its category");
+                    "Send between 1 and " + maxPerSubmission + " screenshots, each with its category");
         }
         Map<Long, Category> active = categories.active().stream()
                 .collect(Collectors.toMap(Category::getId, Function.identity()));
@@ -103,14 +96,14 @@ public class ProofService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown category");
             }
             if (files.get(i).length > maxImageBytes) {
-                throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Certificate too large");
+                throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Screenshot too large");
             }
             types.add(ImageType.detect(files.get(i)).orElseThrow(() ->
                     new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG and WebP images are accepted")));
         }
 
         LocalDate day = today();
-        Map<Long, ProofView.CategoryProgress> state = progress(crewId, day, raceState.isPractice()).categories().stream()
+        Map<Long, ProofView.CategoryProgress> state = progress(crewId, day).categories().stream()
                 .collect(Collectors.toMap(ProofView.CategoryProgress::id, Function.identity()));
         Map<Long, Integer> adding = new HashMap<>();
         categoryIds.forEach(id -> adding.merge(id, 1, Integer::sum));
@@ -119,11 +112,12 @@ public class ProofService {
             if (category.state() == ProofState.APPROVED) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, category.name() + " is already approved");
             }
-            if (entry.getValue() > category.remaining()) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Too many certificates for " + category.name() + " today");
+            if (category.count() + entry.getValue() > maxPerCategory) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Too many screenshots for " + category.name() + " today");
             }
         }
 
+        RaceState raceState = race.get();
         List<String> stored = new ArrayList<>();
         try {
             for (int i = 0; i < files.size(); i++) {
@@ -134,10 +128,10 @@ public class ProofService {
                 proofs.save(new Proof(crewId, categoryIds.get(i), day, raceState.getPhase(), raceState.isPractice(),
                         stored.get(i), types.get(i).contentType(), files.get(i).length, now));
             }
-            return progress(crewId, day, raceState.isPractice());
+            return progress(crewId, day);
         } catch (IOException e) {
             stored.forEach(storage::deleteQuietly);
-            throw new IllegalStateException("Could not store the certificates", e);
+            throw new IllegalStateException("Could not store the screenshots", e);
         } catch (RuntimeException e) {
             stored.forEach(storage::deleteQuietly);
             throw e;
@@ -197,8 +191,8 @@ public class ProofService {
 
     private Decision decision(Proof proof) {
         String category = categories.find(proof.getCategoryId()).map(Category::getName).orElse("category");
-        boolean current = proof.getDay().equals(today()) && proof.isPractice() == race.get().isPractice();
-        boolean done = progress(proof.getCrewId(), proof.getDay(), proof.isPractice()).done();
+        boolean current = proof.getDay().equals(today());
+        boolean done = progress(proof.getCrewId(), proof.getDay()).done();
         return new Decision(proof.getCrewId(), proof.getStatus(), category, proof.getReason(), proof.getId(), current, done);
     }
 
@@ -210,20 +204,14 @@ public class ProofService {
         return proof;
     }
 
-    private ProofView progress(UUID crewId, LocalDate day, boolean practice) {
-        List<Proof> ofTheDay = proofs.findByCrewIdAndDay(crewId, day).stream()
-                .filter(p -> p.isPractice() == practice).toList();
+    private ProofView progress(UUID crewId, LocalDate day) {
+        List<Proof> ofTheDay = proofs.findByCrewIdAndDay(crewId, day);
         List<ProofView.CategoryProgress> rows = new ArrayList<>();
         for (Category category : categories.active()) {
             List<Proof> mine = ofTheDay.stream().filter(p -> p.getCategoryId().equals(category.getId())).toList();
             ProofState state = stateOf(mine);
-            // Rejections free an active slot, but all attempts remain in the audit history.
-            // Bound corrections to twice the ordinary cap, rather than allowing unlimited retries.
-            long active = mine.stream().filter(p -> p.getStatus() != ProofStatus.REJECTED).count();
-            int remaining = state == ProofState.APPROVED ? 0 : Math.max(0,
-                    Math.min(maxPerCategory - (int) active, 2 * maxPerCategory - mine.size()));
             rows.add(new ProofView.CategoryProgress(category.getId(), category.getName(), state,
-                    state == ProofState.REJECTED ? lastReason(mine) : null, mine.size(), remaining));
+                    state == ProofState.REJECTED ? lastReason(mine) : null, mine.size()));
         }
         boolean done = !rows.isEmpty() && rows.stream().allMatch(r -> r.state() == ProofState.APPROVED);
         boolean needsAction = rows.stream().anyMatch(r -> r.state() == ProofState.MISSING || r.state() == ProofState.REJECTED);
