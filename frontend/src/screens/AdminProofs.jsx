@@ -14,7 +14,7 @@ const kstToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul'
 const groupByFan = (items) => {
   const groups = new Map()
   items.forEach((p) => {
-    const key = `${p.crewId}|${p.day}`
+    const key = `${p.crewId}|${p.day}|${p.practice}|${p.phase}`
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key).push(p)
   })
@@ -48,7 +48,7 @@ export default function ProofsPanel({ auth, onLogout, onCount }) {
       <div className="eyebrow">BETA TESTING · {items.length} WAITING</div>
       {items.length === 0 && <p className="muted">No proofs waiting for review.</p>}
       {groupByFan(items).map((group) => (
-        <FanGroup key={`${group[0].crewId}|${group[0].day}`} auth={auth} group={group} onLogout={onLogout} onDone={load} />
+        <FanGroup key={`${group[0].crewId}|${group[0].day}|${group[0].practice}|${group[0].phase}`} auth={auth} group={group} onLogout={onLogout} onDone={load} />
       ))}
       {error && <p className="error" role="alert">{error}</p>}
     </div>

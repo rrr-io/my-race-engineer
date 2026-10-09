@@ -75,7 +75,7 @@ public class ProofService {
 
     @Transactional(readOnly = true)
     public ProofView today(UUID crewId) {
-        return progress(crewId, today());
+        return progress(crewId, today(), race.get().isPractice());
     }
 
     /**
@@ -102,8 +102,9 @@ public class ProofService {
                     new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG and WebP images are accepted")));
         }
 
+        RaceState raceState = race.get();
         LocalDate day = today();
-        Map<Long, ProofView.CategoryProgress> state = progress(crewId, day).categories().stream()
+        Map<Long, ProofView.CategoryProgress> state = progress(crewId, day, raceState.isPractice()).categories().stream()
                 .collect(Collectors.toMap(ProofView.CategoryProgress::id, Function.identity()));
         Map<Long, Integer> adding = new HashMap<>();
         categoryIds.forEach(id -> adding.merge(id, 1, Integer::sum));
@@ -117,7 +118,6 @@ public class ProofService {
             }
         }
 
-        RaceState raceState = race.get();
         List<String> stored = new ArrayList<>();
         try {
             for (int i = 0; i < files.size(); i++) {
@@ -128,7 +128,7 @@ public class ProofService {
                 proofs.save(new Proof(crewId, categoryIds.get(i), day, raceState.getPhase(), raceState.isPractice(),
                         stored.get(i), types.get(i).contentType(), files.get(i).length, now));
             }
-            return progress(crewId, day);
+            return progress(crewId, day, raceState.isPractice());
         } catch (IOException e) {
             stored.forEach(storage::deleteQuietly);
             throw new IllegalStateException("Could not store the screenshots", e);
@@ -191,8 +191,8 @@ public class ProofService {
 
     private Decision decision(Proof proof) {
         String category = categories.find(proof.getCategoryId()).map(Category::getName).orElse("category");
-        boolean current = proof.getDay().equals(today());
-        boolean done = progress(proof.getCrewId(), proof.getDay()).done();
+        boolean current = proof.getDay().equals(today()) && proof.isPractice() == race.get().isPractice();
+        boolean done = progress(proof.getCrewId(), proof.getDay(), proof.isPractice()).done();
         return new Decision(proof.getCrewId(), proof.getStatus(), category, proof.getReason(), proof.getId(), current, done);
     }
 
@@ -204,8 +204,9 @@ public class ProofService {
         return proof;
     }
 
-    private ProofView progress(UUID crewId, LocalDate day) {
-        List<Proof> ofTheDay = proofs.findByCrewIdAndDay(crewId, day);
+    private ProofView progress(UUID crewId, LocalDate day, boolean practice) {
+        List<Proof> ofTheDay = proofs.findByCrewIdAndDay(crewId, day).stream()
+                .filter(p -> p.isPractice() == practice).toList();
         List<ProofView.CategoryProgress> rows = new ArrayList<>();
         for (Category category : categories.active()) {
             List<Proof> mine = ofTheDay.stream().filter(p -> p.getCategoryId().equals(category.getId())).toList();
