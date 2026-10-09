@@ -84,6 +84,13 @@ public class ProofService {
      */
     @Transactional
     public ProofView submit(UUID crewId, List<byte[]> files, List<Long> categoryIds) {
+        RaceState raceState = race.lockForProof();
+        if (raceState.isPitStop() || !java.util.Set.of(Phase.SPRINT_RACE, Phase.GRAND_PRIX, Phase.FINAL_LAP)
+                .contains(raceState.getPhase())) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, "Proof submissions are paused");
+        }
+        // Serialize submissions by the same fan so concurrent requests cannot bypass the daily cap.
+        crew.lockForProof(crewId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (files.isEmpty() || files.size() != categoryIds.size() || files.size() > maxPerSubmission) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Send between 1 and " + maxPerSubmission + " screenshots, each with its category");
@@ -102,7 +109,6 @@ public class ProofService {
                     new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG and WebP images are accepted")));
         }
 
-        RaceState raceState = race.get();
         LocalDate day = today();
         Map<Long, ProofView.CategoryProgress> state = progress(crewId, day, raceState.isPractice()).categories().stream()
                 .collect(Collectors.toMap(ProofView.CategoryProgress::id, Function.identity()));

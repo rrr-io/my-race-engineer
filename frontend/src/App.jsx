@@ -3,9 +3,11 @@ import { clearCrewId, createCrew, getCrew, storeCrewId, storedCrewId } from './a
 import { teamBySlug } from './teams.js'
 import Onboarding from './screens/Onboarding.jsx'
 import Home from './screens/Home.jsx'
+import FreePractice from './screens/FreePractice.jsx'
 import RadioCheck from './screens/RadioCheck.jsx'
 
 export default function App() {
+  const [practice, setPractice] = useState(false)
   const [crew, setCrew] = useState(null)
   const [status, setStatus] = useState('loading')
 
@@ -40,5 +42,6 @@ export default function App() {
   }
   if (status === 'onboarding') return <Onboarding onJoin={join} />
   if (status === 'radio') return <RadioCheck team={teamBySlug(crew.team)} crewId={crew.id} onDone={radioDone} />
-  return <Home team={teamBySlug(crew.team)} crewId={crew.id} />
+  if (practice) return <FreePractice team={teamBySlug(crew.team)} onExit={() => setPractice(false)} />
+  return <Home team={teamBySlug(crew.team)} crewId={crew.id} onPractice={() => setPractice(true)} />
 }

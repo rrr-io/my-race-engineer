@@ -12,7 +12,7 @@ const GLOW_MS = 4000
 // Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't.
 const ACTION_PHASES = ['SPRINT_RACE', 'GRAND_PRIX', 'FINAL_LAP']
 
-export default function Home({ team, crewId }) {
+export default function Home({ team, crewId, onPractice }) {
   const { radio, offline, reload } = useRadio(crewId)
   const racing = !!radio && ACTION_PHASES.includes(radio.phase) && !radio.pitStop
   // the briefing (go vote) stays in the feed, right above the proof card; while racing the proof line moves to the checklist
@@ -81,6 +81,7 @@ export default function Home({ team, crewId }) {
       <RaceWeekendBand team={team} />
 
       <main className="feed">
+        <button type="button" className="btn-secondary" onClick={onPractice}>Try guided Free Practice</button>
         <article className="radio">
           <div className="radio-label">RADIO · ENGINEER</div>
           <p className="radio-text">"{team.welcome}"</p>
@@ -115,7 +116,9 @@ export default function Home({ team, crewId }) {
           )
         })}
 
-        {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} />}
+        {radio && <div hidden={!racing}>
+          <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} />
+        </div>}
       </main>
 
       {racing && <TodayChecklist radio={radio} line={todayLine} onProof={goToProof} glow={boardGlow} />}

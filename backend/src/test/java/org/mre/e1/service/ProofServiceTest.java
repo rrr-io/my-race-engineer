@@ -30,6 +30,8 @@ class ProofServiceTest {
         when(categories.active()).thenReturn(List.of(category));
         when(categories.find(1L)).thenReturn(Optional.of(category));
         when(race.get()).thenReturn(state);
+        when(race.lockForProof()).thenReturn(state);
+        when(crew.lockForProof(crewId)).thenReturn(Optional.of(mock(CrewMember.class)));
         when(state.getPhase()).thenReturn(Phase.SPRINT_RACE);
         when(repository.findByCrewIdAndDay(crewId, day)).thenAnswer(i -> rows);
         service = new ProofService(repository, storage, race, crew, categories,
@@ -65,5 +67,18 @@ class ProofServiceTest {
         assertFalse(result.current());
         assertTrue(result.done());
         assertFalse(service.today(crewId).done());
+    }
+
+    @Test void gridFinishAndPitStopRefuseUploadsBeforeStorage() {
+        for (Phase phase : List.of(Phase.GRID, Phase.FINISH_LINE)) {
+            when(state.getPhase()).thenReturn(phase);
+            assertEquals(423, assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> service.submit(crewId, List.of(new byte[8]), List.of(1L))).getStatusCode().value());
+        }
+        when(state.getPhase()).thenReturn(Phase.SPRINT_RACE);
+        when(state.isPitStop()).thenReturn(true);
+        assertEquals(423, assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.submit(crewId, List.of(new byte[8]), List.of(1L))).getStatusCode().value());
+        verifyNoInteractions(storage);
     }
 }

@@ -27,7 +27,7 @@ const Chevron = ({ open }) => (
 )
 
 /** Today's job as a checklist docked at the bottom: one line closed, every category open. */
-export default function TodayChecklist({ radio, line, onProof, glow = false }) {
+export default function TodayChecklist({ radio, line, onProof, glow = false, demo = false }) {
   const now = useNow()
   const [open, setOpen] = useState(false)
   const proof = radio?.proof
@@ -85,7 +85,7 @@ export default function TodayChecklist({ radio, line, onProof, glow = false }) {
           <span className="eyebrow">TODAY CHECKLIST</span>
           <span className="today-summary">
             <b>{summary}</b>
-            <span className={lapSoon(now) && !done ? 'today-soon' : 'muted'}> · {lapLine(now)}</span>
+            {!demo && <span className={lapSoon(now) && !done ? 'today-soon' : 'muted'}> · {lapLine(now)}</span>}
           </span>
         </span>
         <span className="today-meter" aria-hidden="true">
