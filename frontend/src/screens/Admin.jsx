@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   adminCategories, adminCheck, adminProofs, adminPush, adminReminders, adminVoteLink, putCategories,
   putReminders, putVoteLink, runReminders, sendTestPush
@@ -110,14 +110,34 @@ function SetupPanel({ auth, onLogout }) {
   const [voteServer, setVoteServer] = useState('')
   const [voteSaved, setVoteSaved] = useState(null)
 
+  const mounted = useRef(false)
+  const [loads, setLoads] = useState({})
+  const loadSection = async (key) => {
+    setLoads((current) => ({ ...current, [key]: 'loading' }))
+    const loaders = { push: adminPush, vote: adminVoteLink, reminders: adminReminders, categories: adminCategories }
+    try {
+      const r = await loaders[key](auth)
+      if (!mounted.current) return
+      if (key === 'push') setPush(r)
+      if (key === 'vote') { setVote(r.url); setVoteServer(r.url) }
+      if (key === 'reminders') { setRem(r); setRemServer(remKey(r)) }
+      if (key === 'categories') {
+        const text = r.categories.map((c) => c.name).join('\n')
+        setCatText(text); setCatServer(text)
+      }
+      setLoads((current) => ({ ...current, [key]: 'ready' }))
+    } catch (err) {
+      if (!mounted.current) return
+      if (err.status === 401) { onLogout(); return }
+      setLoads((current) => ({ ...current, [key]: 'error' }))
+    }
+  }
+
   useEffect(() => {
-    adminPush(auth).then(setPush).catch(() => {})
-    adminVoteLink(auth).then((r) => { setVote(r.url); setVoteServer(r.url) }).catch(() => {})
-    adminReminders(auth).then((r) => { setRem(r); setRemServer(remKey(r)) }).catch(() => {})
-    adminCategories(auth)
-      .then((r) => { const text = r.categories.map((c) => c.name).join('\n'); setCatText(text); setCatServer(text) })
-      .catch(() => {})
-  }, [])
+    mounted.current = true
+    for (const key of ['push', 'vote', 'reminders', 'categories']) loadSection(key)
+    return () => { mounted.current = false }
+  }, [auth])
 
   const saveCategories = async () => {
     setBusy(true); setError(null); setCatSaved(null)
@@ -191,6 +211,7 @@ function SetupPanel({ auth, onLogout }) {
     <div className="admin-body">
       <section className="card">
         <div className="eyebrow">VOTING CATEGORIES</div>
+        <LoadStatus label="voting categories" status={loads.categories} onRetry={() => loadSection('categories')} />
         <p className="muted small">
           One per line, in the order fans see them. Change the list when a new stage starts. A category you keep
           (same name) keeps today's progress; one you remove is archived.
@@ -206,6 +227,7 @@ function SetupPanel({ auth, onLogout }) {
 
       <section className="card">
         <div className="eyebrow">MNET+ LINK</div>
+        <LoadStatus label="mnet+ link" status={loads.vote} onRetry={() => loadSection('vote')} />
         <p className="muted small">
           Where the "Open MNET+" button takes fans. Use the page or the link for the current stage; it must start
           with https://.
@@ -224,8 +246,8 @@ function SetupPanel({ auth, onLogout }) {
 
       <section className="card">
         <div className="eyebrow">NOTIFICATIONS</div>
+        <LoadStatus label="notifications" status={loads.push} onRetry={() => loadSection('push')} />
         <p className="muted small">
-          {!push && 'Checking push status…'}
           {push?.enabled && `Push is on · ${push.subscriptions} device${push.subscriptions === 1 ? '' : 's'} subscribed.`}
           {push && !push.enabled && 'Push is off. Add the VAPID keys to turn it on.'}
         </p>
@@ -237,6 +259,7 @@ function SetupPanel({ auth, onLogout }) {
 
       <section className="card">
         <div className="eyebrow">REMINDERS</div>
+        <LoadStatus label="reminders" status={loads.reminders} onRetry={() => loadSection('reminders')} />
         <p className="muted small">
           While a race phase is on (and no pit stop), fans who still have categories to do get a radio call from their
           engineer, in their own local time and only inside this window. It stops once every category has a proof in
@@ -278,6 +301,17 @@ function SetupPanel({ auth, onLogout }) {
 
       {error && <p className="error" role="alert">{error}</p>}
       <button type="button" className="btn-link" onClick={onLogout}>Log out</button>
+    </div>
+  )
+}
+
+function LoadStatus({ label, status, onRetry }) {
+  if (!status || status === 'loading') return <p className="muted small" role="status">Loading {label}…</p>
+  if (status !== 'error') return null
+  return (
+    <div>
+      <p className="error small" role="alert">Could not load {label}. Other sections are still available.</p>
+      <button type="button" className="btn-secondary" onClick={onRetry}>Retry {label}</button>
     </div>
   )
 }

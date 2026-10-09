@@ -1,3 +1,4 @@
+import { proofSummary } from './proofSummary.js'
 import { useState } from 'react'
 import { lapLine, lapSoon } from './lap.js'
 import { useNow } from './useNow.js'
@@ -35,14 +36,9 @@ export default function TodayChecklist({ radio, line, onProof, glow = false, dem
 
   const { categories, done } = proof
   const count = (state) => categories.filter((c) => c.state === state).length
-  const approved = count('APPROVED')
   const missing = count('MISSING')
   const rejected = count('REJECTED')
-
-  let summary
-  if (done) summary = 'All done for today'
-  else if (missing === 0 && rejected === 0) summary = 'Waiting for Race Control'
-  else summary = `${approved} of ${categories.length} approved`
+  const summary = done ? 'All done for today' : proofSummary(categories).text
 
   const toProof = () => { setOpen(false); onProof() }
 
