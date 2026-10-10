@@ -409,11 +409,10 @@ button.check-row .check-state::after { content: ' ›'; }
 .start-light { width: 34px; height: 34px; border-radius: 17px; background: #2A1416; box-shadow: inset 0 0 0 2px #3A1C1F;
   transition: background 0.12s, box-shadow 0.12s; }
 .start-light.is-on { background: var(--lit); box-shadow: 0 0 18px 2px var(--lit); }
-.splash-caption { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; color: var(--muted); text-align: center; }
-.splash-out { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.splash-out-title { font-size: 26px; line-height: 30px; font-weight: 900; letter-spacing: 0.06em; color: var(--lit); }
-.splash-hold { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
-.splash-hold-title { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; color: #FFB020; }
-.splash-hold p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--muted); }
-.splash-retry { max-width: 326px; margin-top: -4px; }
-.splash.is-neutral .splash-retry { --accent: var(--lit); --on-accent: #FFFFFF; }
+.splash-middle { height: 64px; display: flex; align-items: center; justify-content: center; }
+.splash-wave { display: flex; align-items: center; gap: 5px; height: 40px; }
+.splash-wave span { width: 5px; border-radius: 3px; background: #4A4D55; transform-origin: center; }
+.splash-wave.is-on span { background: var(--lit); animation: radio-wave 0.9s ease-in-out infinite; }
+.splash-hold { margin: 0; text-align: center; font-size: 15px; line-height: 1.45; color: var(--muted); }
+.splash-retry { max-width: 326px; }
+.splash.is-neutral .splash-retry { --on-accent: #FFFFFF; }

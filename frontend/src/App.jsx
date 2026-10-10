@@ -4,7 +4,7 @@ import { teamBySlug } from './teams.js'
 import Onboarding from './screens/Onboarding.jsx'
 import Home from './screens/Home.jsx'
 import RadioCheck from './screens/RadioCheck.jsx'
-import Splash from './Splash.jsx'
+import Splash, { rememberSeen, splashMode } from './Splash.jsx'
 
 export default function App() {
   const [crew, setCrew] = useState(null)
@@ -13,6 +13,15 @@ export default function App() {
   const [splash, setSplash] = useState(() => !!storedCrewId())
   const [homeReady, setHomeReady] = useState(false)
   const [splashTeam] = useState(() => teamBySlug(storedTeam()) ?? null)
+  const [mode] = useState(splashMode)
+
+  // remember when the fan last had the app on screen: a long absence brings back the start lights
+  useEffect(() => {
+    const onHide = () => { if (document.visibilityState === 'hidden') rememberSeen() }
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', rememberSeen)
+    return () => { document.removeEventListener('visibilitychange', onHide); window.removeEventListener('pagehide', rememberSeen) }
+  }, [])
 
   useEffect(() => {
     const id = storedCrewId()
@@ -48,7 +57,7 @@ export default function App() {
     <>
       {screen}
       {(splash || status === 'offline') && (
-        <Splash team={splashTeam} ready={status === 'ready' && homeReady} failed={status === 'offline'} onDone={splashDone} />
+        <Splash team={splashTeam} mode={mode} ready={status === 'ready' && homeReady} failed={status === 'offline'} onDone={splashDone} />
       )}
     </>
   )
