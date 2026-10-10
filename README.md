@@ -58,6 +58,14 @@ Race Control sets the voting categories from `/admin` (one per line; change them
 
 `PROOFS_MAX_PER_SUBMISSION` (default 10) is only how many files travel in one request: the app sends the rest in further requests. Certificates are stored on disk in `PROOFS_DIR` (a Docker volume in production) and are only served to the admin.
 
+## Installing the app
+
+The app is a PWA and explains how to install it depending on the phone it runs on:
+
+- **iPhone (Safari):** push only works once the app is on the Home Screen (iOS 16.4 or later), so the Radio Check and the notifications card show the steps instead of the switch: Share, then Add to Home Screen, then open the app from there.
+- **Android (Chrome, Samsung Internet):** push works in the browser too, so installing is optional. The home shows a card from the ENGENEer: an **Install the app** button that opens Chrome's own install dialog when Chrome offers it (`beforeinstallprompt`), otherwise the menu steps (⋮, then Install app or Add to Home screen; on Samsung Internet ≡, Add page to, Home screen). It disappears once the app runs installed, or after Not now.
+- **Desktop:** nothing to do; Chrome and Edge show their own install icon in the address bar.
+
 ## Buttons and what's new
 
 The ENGENEer's voting message has two buttons: "Open MNET+" (the link Race Control sets in `/admin`, https only, `https://mnetplus.world/` by default) and "Upload proof" (scrolls to the proof card). Reminder and rejection notifications carry the same buttons where the device shows them (Android and desktop; iPhone ignores notification buttons, and tapping the notification opens the proof card). The newest message the fan has not seen glows with a NEW tag until they tap it or leave the app.

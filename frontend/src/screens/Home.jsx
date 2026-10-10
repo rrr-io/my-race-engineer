@@ -3,6 +3,7 @@ import { useRadio } from '../useRadio.js'
 import { messageKey, useNewMessage } from '../useNewMessage.js'
 import { usePaddockRead } from '../usePaddockRead.js'
 import NotificationsCard from '../NotificationsCard.jsx'
+import InstallCard from '../InstallCard.jsx'
 import ProofCard from '../ProofCard.jsx'
 import RaceWeekendBand from '../RaceWeekendBand.jsx'
 import TodayChecklist from '../TodayChecklist.jsx'
@@ -91,6 +92,8 @@ export default function Home({ team, crewId, onReady, onPractice, tourReady = tr
         </article>
 
         <NotificationsCard crewId={crewId} />
+
+        <InstallCard />
 
         {feed.map((m) => {
           const key = messageKey(m)
