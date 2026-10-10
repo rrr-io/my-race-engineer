@@ -115,7 +115,7 @@ public class ReminderService {
                 .stream()
                 .collect(Collectors.toMap(CrewMember::getId, CrewMember::getTeam));
         Map<UUID, ProofView> progress = new HashMap<>();
-        String title = state.isPractice() ? "Race Engineer · Free Practice" : "Race Engineer";
+        String title = "Race Engineer"; // free practice never runs with a race phase, so no reminders then
         String voteUrl = vote.url();
 
         List<Long> reminded = new ArrayList<>();

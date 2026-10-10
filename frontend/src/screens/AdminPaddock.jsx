@@ -68,7 +68,8 @@ export default function PaddockPanel({ auth, onLogout }) {
         <div className="eyebrow">PADDOCK ANNOUNCERS</div>
         <p className="muted small">
           Talk to one team at a time, through its race engineer. Only that team's crew gets it: in their feed as
-          RADIO · ENGINEER (or RADIO · FANCHANT) for 48 hours, and as a notification.
+          RADIO · ENGINEER (or RADIO · FANCHANT), and as a notification. Each fan sees it until the next time they
+          open the app after reading it, for 48 hours at most.
         </p>
         <div className="team-picker" role="radiogroup" aria-label="Team">
           {TEAMS.map((t) => (

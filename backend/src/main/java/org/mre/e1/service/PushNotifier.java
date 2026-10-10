@@ -29,6 +29,7 @@ public class PushNotifier {
 
     private static final Logger log = LoggerFactory.getLogger(PushNotifier.class);
     private static final int TTL_SECONDS = 3600;
+    private static final String PRACTICE_TITLE = "Race Engineer · Free Practice";
 
     public record Action(String action, String title) {}
 
@@ -104,15 +105,20 @@ public class PushNotifier {
         workers.execute(() -> deliver(subscription, new Payload(title, body, tag, "/")));
     }
 
-    /** Lights Out when the phase changes, Pit Stop when it starts. Runs in the background, after the admin request is done. */
-    public void raceChanged(Phase oldPhase, boolean oldPitStop, RaceState state) {
+    /**
+     * Lights Out when the phase changes, Pit Stop when it starts, the engineer's call when free practice opens.
+     * Runs in the background, after the admin request is done.
+     */
+    public void raceChanged(Phase oldPhase, boolean oldPitStop, boolean oldPractice, RaceState state) {
         if (sender == null) {
             return;
         }
         Phase phase = state.getPhase();
-        boolean practice = state.isPractice();
         if (phase != oldPhase) {
-            dispatcher.execute(() -> notifyLightsOut(phase, practice));
+            dispatcher.execute(() -> notifyLightsOut(phase));
+        }
+        if (state.isPractice() && !oldPractice) {
+            dispatcher.execute(this::notifyPracticeOpen);
         }
         if (state.isPitStop() && !oldPitStop) {
             dispatcher.execute(() -> notifyPitStop(phase));
@@ -143,6 +149,15 @@ public class PushNotifier {
         });
     }
 
+    private void notifyPracticeOpen() {
+        try {
+            Payload payload = new Payload(PRACTICE_TITLE, RadioService.PRACTICE_OPEN, "practice", "/?proof=1");
+            subscriptions.all().forEach(s -> workers.execute(() -> deliver(s, payload)));
+        } catch (RuntimeException e) {
+            log.error("Free practice broadcast failed", e);
+        }
+    }
+
     private void notifyPodium() {
         try {
             Payload payload = new Payload("Race Control · Finish Line", radio.podiumLine(), "podium", "/");
@@ -152,8 +167,9 @@ public class PushNotifier {
         }
     }
 
-    /** Tells one fan how Race Control judged their proof, in their engineer's voice. */
-    public void proofDecided(UUID crewId, ProofStatus status, String reason, long proofId) {
+    /** Tells one fan how Race Control judged their proof, in their engineer's voice; a free practice proof says so. */
+    public void proofDecided(UUID crewId, ProofStatus status, String reason, long proofId, boolean practice) {
+        String title = practice ? PRACTICE_TITLE : "Race Engineer";
         if (sender == null) {
             return;
         }
@@ -162,9 +178,9 @@ public class PushNotifier {
                 crew.findById(crewId).flatMap(member -> radio.proof(member.getTeam(), status, reason, proofId))
                         .ifPresent(text -> {
                             Payload payload = status == ProofStatus.REJECTED
-                                    ? new Payload("Race Engineer", text, "proof", "/?proof=1", null,
+                                    ? new Payload(title, text, "proof", "/?proof=1", null,
                                             List.of(new Action("proof", "Upload proof")))
-                                    : new Payload("Race Engineer", text, "proof", "/");
+                                    : new Payload(title, text, "proof", "/");
                             subscriptions.forCrew(crewId).forEach(s -> workers.execute(() -> deliver(s, payload)));
                         });
             } catch (RuntimeException e) {
@@ -184,7 +200,7 @@ public class PushNotifier {
         return all.size();
     }
 
-    private void notifyLightsOut(Phase phase, boolean practice) {
+    private void notifyLightsOut(Phase phase) {
         try {
             List<PushSubscription> all = subscriptions.all();
             Map<UUID, Team> teamByCrew = crew
@@ -192,7 +208,7 @@ public class PushNotifier {
                     .stream()
                     .collect(Collectors.toMap(CrewMember::getId, CrewMember::getTeam));
             Map<Team, Optional<String>> texts = new EnumMap<>(Team.class);
-            String title = practice ? "Race Engineer · Free Practice" : "Race Engineer";
+            String title = "Race Engineer";
 
             for (PushSubscription subscription : all) {
                 Team team = teamByCrew.get(subscription.getCrewId());

@@ -30,7 +30,7 @@ const Chevron = ({ open }) => (
  * Today's job as a checklist docked at the bottom: one line closed, every category open.
  * `practice` is the Go Kart version: same checklist, no Korea-time lap.
  */
-export default function TodayChecklist({ radio, line, onProof, glow = false, practice = false, uploadLabel = 'Upload proof' }) {
+export default function TodayChecklist({ radio, line, onProof, glow = false, practice = false, uploadLabel = 'Upload proof', title = null }) {
   const now = useNow()
   const [open, setOpen] = useState(false)
   const proof = radio?.proof
@@ -103,7 +103,7 @@ export default function TodayChecklist({ radio, line, onProof, glow = false, pra
       )}
       <button type="button" className="today-bar" aria-expanded={open} aria-controls="today-panel" onClick={() => setOpen(!open)}>
         <span className="today-text">
-          <span className="eyebrow">{practice ? 'PRACTICE CHECKLIST' : 'TODAY CHECKLIST'}</span>
+          <span className="eyebrow">{title ?? (practice ? 'PRACTICE CHECKLIST' : 'TODAY CHECKLIST')}</span>
           <span className="today-summary">{summary}</span>
         </span>
         <span className="today-side">

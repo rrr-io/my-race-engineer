@@ -40,12 +40,16 @@ public class RaceState {
     protected RaceState() {
     }
 
-    /** Switching practice on or off always sends the race back to the grid; an explicit phase in the same request wins. */
+    /**
+     * Switching free practice on or off always sends the race back to the grid; an explicit phase in the same request
+     * wins. Free practice is a session of its own, so it restarts the clock like a new phase.
+     */
     public void update(Phase newPhase, Boolean newPitStop, Boolean newPractice) {
         Instant now = Instant.now();
         Phase oldPhase = this.phase;
         boolean oldPitStop = this.pitStop;
-        if (newPractice != null && newPractice != this.practice) {
+        boolean practiceChanged = newPractice != null && newPractice != this.practice;
+        if (practiceChanged) {
             this.practice = newPractice;
             this.phase = Phase.GRID;
         }
@@ -55,7 +59,7 @@ public class RaceState {
         if (newPitStop != null) {
             this.pitStop = newPitStop;
         }
-        if (this.phase != oldPhase) {
+        if (this.phase != oldPhase || practiceChanged) {
             this.phaseStartedAt = now;
         }
         if (this.pitStop && !oldPitStop) {

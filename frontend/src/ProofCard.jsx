@@ -14,7 +14,8 @@ const messageFor = (err) => {
   return "Couldn't send your proof. Check your connection and try again."
 }
 
-export default function ProofCard({ crewId, proof, onChanged, highlight = false }) {
+/** `practice`: free practice, a certificate from an old vote that Race Control reviews for real but never counts. */
+export default function ProofCard({ crewId, proof, onChanged, highlight = false, practice = false }) {
   const [picked, setPicked] = useState({})
   const [busy, setBusy] = useState(false)
   const now = useNow()
@@ -67,7 +68,7 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false 
   return (
     <section id="proof-card" className={`card proof ${highlight ? 'is-highlight' : ''}`}>
       <div className="proof-title">
-        <div className="eyebrow">TODAY'S PROOF · KST</div>
+        <div className="eyebrow">{practice ? 'FREE PRACTICE · NOT COUNTED' : "TODAY'S PROOF · KST"}</div>
         {done && <span className="pit-tag">ALL DONE</span>}
       </div>
       {categories.length > 0 && <p className="muted small">The proof day follows Korea time. {lapLine(now)}.</p>}
@@ -75,9 +76,15 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false 
         <p className="muted small">Race Control hasn't announced today's categories yet. Check back soon.</p>
       )}
       {categories.length > 0 && !done && (
-        <p className="muted small">Vote on MNET+, then send at least one screenshot for every category.</p>
+        <p className="muted small">
+          {practice
+            ? "Send a certificate from an old vote for every category. Race Control checks it for real, but it doesn't count for the race."
+            : 'Vote on MNET+, then send at least one screenshot for every category.'}
+        </p>
       )}
-      {done && <p className="muted small">You're done for today. See you at the next lap.</p>}
+      {done && (
+        <p className="muted small">{practice ? "Practice done! That's exactly how race day works." : "You're done for today. See you at the next lap."}</p>
+      )}
 
       {categories.map((c) => {
         const mine = picked[c.id] ?? []

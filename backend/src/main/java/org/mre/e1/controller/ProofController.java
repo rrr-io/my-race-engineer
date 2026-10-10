@@ -83,7 +83,7 @@ public class ProofController {
     public Map<String, String> approve(@PathVariable long id) {
         ProofService.Decision decision = proofs.approve(id);
         if (decision.current() && decision.done()) {
-            notifier.proofDecided(decision.crewId(), ProofStatus.APPROVED, null, decision.proofId());
+            notifier.proofDecided(decision.crewId(), ProofStatus.APPROVED, null, decision.proofId(), decision.practice());
         }
         return Map.of("status", ProofStatus.APPROVED.name());
     }
@@ -93,7 +93,7 @@ public class ProofController {
         ProofService.Decision decision = proofs.reject(id, request.reason());
         if (decision.current()) {
             notifier.proofDecided(decision.crewId(), ProofStatus.REJECTED,
-                    decision.reason() + " (" + decision.category() + ")", decision.proofId());
+                    decision.reason() + " (" + decision.category() + ")", decision.proofId(), decision.practice());
         }
         return Map.of("status", ProofStatus.REJECTED.name());
     }

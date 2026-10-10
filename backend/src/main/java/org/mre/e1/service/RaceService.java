@@ -27,6 +27,8 @@ public class RaceService {
     /**
      * While a pit stop is on the stage is frozen: neither a new phase nor switching free practice (which resets the
      * phase) is accepted, unless the same request ends the pit stop.
+     * Free practice is a session on the Grid, for trying uploads and reviews that don't count: it starts only from
+     * the Grid, no race phase or pit stop happens while it's on, and ending it can move straight to a phase.
      */
     @Transactional
     public RaceState update(Phase phase, Boolean pitStop, Boolean practice) {
@@ -36,6 +38,17 @@ public class RaceService {
                 || (practice != null && practice != state.isPractice());
         if (state.isPitStop() && changesStage && !endsPitStop) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "End the pit stop before changing stage");
+        }
+        boolean startsPractice = Boolean.TRUE.equals(practice) && !state.isPractice();
+        boolean inPractice = state.isPractice() && !Boolean.FALSE.equals(practice);
+        if (startsPractice && (phase != null ? phase != Phase.GRID : state.getPhase() != Phase.GRID)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Free practice starts from the Grid");
+        }
+        if ((startsPractice || inPractice) && phase != null && phase != Phase.GRID) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "End free practice before changing phase");
+        }
+        if ((startsPractice || inPractice) && Boolean.TRUE.equals(pitStop)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No pit stop during free practice");
         }
         state.update(phase, pitStop, practice);
         return state;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRadio } from '../useRadio.js'
 import { messageKey, useNewMessage } from '../useNewMessage.js'
+import { usePaddockRead } from '../usePaddockRead.js'
 import NotificationsCard from '../NotificationsCard.jsx'
 import ProofCard from '../ProofCard.jsx'
 import RaceWeekendBand from '../RaceWeekendBand.jsx'
@@ -14,19 +15,25 @@ import { KARTS, practiceDone } from '../gokart.js'
 
 const GLOW_MS = 8000
 
-// Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't.
+// Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't. Free practice (on the Grid)
+// opens the proof card too, for certificates from an old vote that Race Control reviews but never counts.
 const ACTION_PHASES = ['SPRINT_RACE', 'GRAND_PRIX', 'FINAL_LAP']
 
 export default function Home({ team, crewId, onReady, onPractice }) {
   const { radio, offline, reload } = useRadio(crewId)
   useEffect(() => { if (radio || offline) onReady?.() }, [radio, offline, onReady])
-  const racing = !!radio && ACTION_PHASES.includes(radio.phase) && !radio.pitStop
+  const practice = !!radio?.practice
+  const racing = !!radio && (ACTION_PHASES.includes(radio.phase) || practice) && !radio.pitStop
+  // in free practice there's nothing to vote: no MNET+ button anywhere
+  const voteUrl = practice ? null : radio?.voteUrl
   // the briefing (go vote) stays in the feed, right above the proof card; while racing the proof line moves to the checklist
+  // fanchants and Paddock messages already read on an earlier opening are gone, to keep the feed short
+  const paddockRead = usePaddockRead(crewId, radio?.messages)
   const feed = (radio?.messages ?? []).filter((m) =>
-    (m.kind !== 'BRIEFING' || racing) && !(racing && m.kind === 'PROOF'))
+    (m.kind !== 'BRIEFING' || racing) && !(racing && m.kind === 'PROOF') && !paddockRead.isHidden(m))
   const todayLine = racing ? (radio.messages.find((m) => m.kind === 'PROOF')?.text ?? null) : null
   const { isNew, dismiss } = useNewMessage(crewId, radio ? feed : undefined)
-  const boardGlow = useBoardGlow(crewId, racing ? `${radio.phase}|${radio.proof?.categories.map((c) => c.id).join(',')}` : null)
+  const boardGlow = useBoardGlow(crewId, racing ? `${practice ? 'PRACTICE' : radio.phase}|${radio.proof?.categories.map((c) => c.id).join(',')}` : null)
   const now = useNow()
   const podium = radio?.phase === 'FINISH_LINE' ? (radio.podium ?? []) : []
   const ceremony = useCeremony(crewId, podium)
@@ -84,7 +91,8 @@ export default function Home({ team, crewId, onReady, onPractice }) {
           const key = messageKey(m)
           const fresh = isNew(key)
           return (
-            <article className={`radio ${fresh ? 'is-new' : ''}`} key={key} onClick={fresh ? dismiss : undefined}>
+            <article className={`radio ${fresh ? 'is-new' : ''}`} key={key} onClick={fresh ? dismiss : undefined}
+                     data-paddock-id={m.from === 'PADDOCK' && m.id != null ? m.id : undefined}>
               <RadioHead from={m.from} kind={m.kind} fresh={fresh} at={m.at} now={now} />
               <div className="radio-body">
                 <p className={`radio-text ${m.kind === 'CHANT' ? 'is-chant' : ''}`}>
@@ -92,8 +100,8 @@ export default function Home({ team, crewId, onReady, onPractice }) {
                 </p>
                 {m.kind === 'BRIEFING' && (
                   <div className="msg-actions">
-                    {radio.voteUrl && (
-                      <a className="btn-action" href={radio.voteUrl} target="_blank" rel="noopener noreferrer">Open MNET+</a>
+                    {voteUrl && (
+                      <a className="btn-action" href={voteUrl} target="_blank" rel="noopener noreferrer">Open MNET+</a>
                     )}
                     {racing && (
                       <button type="button" className="btn-action" onClick={(e) => { e.stopPropagation(); goToProof() }}>
@@ -109,12 +117,17 @@ export default function Home({ team, crewId, onReady, onPractice }) {
 
         {podium.length > 0 && <PodiumCard podium={podium} myTeam={team.slug} onReplay={ceremony.show} />}
 
-        {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} />}
+        {racing && (
+          <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} practice={practice} />
+        )}
 
         {onPractice && <GoKartCard onStart={onPractice} />}
       </main>
 
-      {racing && <TodayChecklist radio={radio} line={todayLine} onProof={goToProof} glow={boardGlow} />}
+      {racing && (
+        <TodayChecklist radio={{ ...radio, voteUrl }} line={todayLine} onProof={goToProof} glow={boardGlow}
+                        title={practice ? 'PRACTICE CHECKLIST' : undefined} />
+      )}
 
       {ceremony.open && <PodiumCeremony podium={podium} myTeam={team.slug} onClose={ceremony.close} />}
     </div>

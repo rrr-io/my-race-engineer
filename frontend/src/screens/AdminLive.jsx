@@ -44,6 +44,25 @@ function ConfirmCard({ confirm, busy, onYes, onNo }) {
   )
 }
 
+/**
+ * On/off switch for the two states that sit on top of the phase (pit stop, free practice), so they don't read like
+ * the one-off actions around them. Flipping it opens the check card; the switch moves only once the change is saved.
+ */
+function Toggle({ id, kind, label, on, onLabel, disabled, onToggle }) {
+  return (
+    <div className="toggle-row">
+      <label className="toggle-text" htmlFor={id}>
+        <span className="eyebrow">{label}</span>
+        <span className={`toggle-state ${on ? `is-on is-${kind}` : ''}`}>{on ? onLabel : 'OFF'}</span>
+      </label>
+      <button id={id} type="button" role="switch" aria-checked={on} disabled={disabled} onClick={onToggle}
+              className={`switch is-${kind} ${on ? 'is-on' : ''}`}>
+        <span className="switch-knob" aria-hidden="true" />
+      </button>
+    </div>
+  )
+}
+
 /** The race as it happens: phase, free practice, pit stop. Every change is confirmed with a preview. */
 export default function LivePanel({ auth, onLogout }) {
   const [race, setRaceState] = useState(null)
@@ -79,7 +98,11 @@ export default function LivePanel({ auth, onLogout }) {
     } catch (err) {
       if (err.status === 401) { onLogout(); return }
       setConfirm(null)
-      if (err.status === 409) { setError('End the pit stop before changing stage.'); load(); return }
+      if (err.status === 409) {
+        setError(race.practice ? 'End free practice first.' : race.pitStop ? 'End the pit stop before changing stage.'
+          : "That change isn't allowed right now.")
+        load(); return
+      }
       setError("Couldn't save. Try again.")
     } finally {
       setBusy(false)
@@ -89,6 +112,8 @@ export default function LivePanel({ auth, onLogout }) {
   if (!race) return <p className="admin-body muted">{error ?? 'Loading…'}</p>
 
   const frozen = race.pitStop
+  // free practice is a session on the Grid: phases and pit stops wait until it ends
+  const locked = frozen || race.practice
   const confirmCard = (where) => confirm?.where === where && (
     <ConfirmCard confirm={confirm} busy={busy} onYes={() => apply(confirm.body)} onNo={() => setConfirm(null)} />
   )
@@ -102,11 +127,14 @@ export default function LivePanel({ auth, onLogout }) {
         effect: 'The race resumes and reminders start again.', yesLabel: 'End pit stop' }
     : { key: 'pit-on', where: 'pit', body: { pitStop: true }, query: { pitStop: true }, title: 'Start a pit stop?',
         effect: 'The race pauses for everyone: the stage is frozen and reminders stop.', yesLabel: 'Start pit stop' })
-  const askPractice = () => ask({
-    key: `practice-${!race.practice}`, where: 'practice', body: { practice: !race.practice },
-    title: race.practice ? 'End free practice?' : 'Start free practice?',
-    effect: 'The phase goes back to Grid for everyone.', yesLabel: race.practice ? 'End free practice' : 'Start free practice'
-  })
+  const askPractice = () => ask(race.practice
+    ? { key: 'practice-off', where: 'practice', body: { practice: false }, title: 'End free practice?',
+        effect: 'Uploads close and the race stays on the Grid. Practice proofs never count for the race or the podium.',
+        yesLabel: 'End free practice' }
+    : { key: 'practice-on', where: 'practice', body: { practice: true }, query: { practice: true },
+        title: 'Start free practice?',
+        effect: 'Fans can send a certificate from an old vote and you review it in Proofs, like on race day. Nothing counts. Phases and pit stops are locked until you end it.',
+        yesLabel: 'Start free practice' })
 
   return (
     <div className="admin-body">
@@ -122,9 +150,10 @@ export default function LivePanel({ auth, onLogout }) {
       <section className="card">
         <div className="eyebrow">SET PHASE</div>
         {frozen && <p className="muted small">Pit stop is on. End it to change stage.</p>}
+        {race.practice && <p className="muted small">Free practice is on. End it to start a race phase.</p>}
         <div className="phase-list" role="radiogroup" aria-label="Race phase">
           {PHASES.map((p) => (
-            <button key={p.key} type="button" role="radio" aria-checked={picked === p.key} disabled={frozen || busy}
+            <button key={p.key} type="button" role="radio" aria-checked={picked === p.key} disabled={locked || busy}
                     className={`phase-option ${picked === p.key ? 'is-picked' : ''}`}
                     onClick={() => { setPicked(p.key); if (confirm?.where === 'phase') setConfirm(null) }}>
               <span>{p.label}</span>
@@ -133,7 +162,7 @@ export default function LivePanel({ auth, onLogout }) {
           ))}
         </div>
         {confirm?.where !== 'phase' && (
-          <button className="btn-primary" disabled={busy || frozen || picked === race.phase} onClick={askPhase}>
+          <button className="btn-primary" disabled={busy || locked || picked === race.phase} onClick={askPhase}>
             Set phase
           </button>
         )}
@@ -141,21 +170,25 @@ export default function LivePanel({ auth, onLogout }) {
       {confirmCard('phase')}
 
       <section className="card">
-        <div className="eyebrow">PIT STOP</div>
+        <Toggle id="pit-switch" kind="pit" label="PIT STOP" on={race.pitStop} onLabel="ON · RACE PAUSED"
+                disabled={busy || confirm?.where === 'pit' || (race.practice && !race.pitStop)} onToggle={askPit} />
         <p className="muted small">Pauses the race for everyone and posts a Race Control message in the app.</p>
-        <button className="btn-secondary" disabled={busy || confirm?.where === 'pit'} onClick={askPit}>
-          {race.pitStop ? 'End pit stop' : 'Start pit stop'}
-        </button>
+        {race.practice && !race.pitStop && <p className="muted small">No pit stop during free practice.</p>}
       </section>
       {confirmCard('pit')}
 
       <section className="card">
-        <div className="eyebrow">FREE PRACTICE</div>
+        <Toggle id="practice-switch" kind="practice" label="FREE PRACTICE" on={race.practice} onLabel="ON · NOT COUNTED"
+                disabled={busy || frozen || confirm?.where === 'practice' || (!race.practice && race.phase !== 'GRID')}
+                onToggle={askPractice} />
+        <p className="muted small">
+          A session on the Grid to try the real loop: fans send a certificate from an old vote, you approve or reject it
+          in Proofs. Practice proofs never count for the race or the podium.
+        </p>
         {frozen && <p className="muted small">Pit stop is on. End it to switch free practice.</p>}
-        <p className="muted small">Marks the race as a simulation. Switching it on or off resets the phase to Grid.</p>
-        <button className="btn-secondary" disabled={busy || frozen || confirm?.where === 'practice'} onClick={askPractice}>
-          {race.practice ? 'End free practice' : 'Start free practice'}
-        </button>
+        {!race.practice && race.phase !== 'GRID' && !frozen && (
+          <p className="muted small">Free practice starts from the Grid. Set the phase to Grid first.</p>
+        )}
       </section>
       {confirmCard('practice')}
 

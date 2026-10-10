@@ -52,15 +52,19 @@ public class RaceController {
 
     /**
      * The radio calls a change would send: the Lights Out line of each team for a new phase, or the Race Control
-     * line when a pit stop starts. Same texts the notifier sends; nothing is changed or sent here.
+     * line when a pit stop starts, the engineer's call when free practice opens. Same texts the notifier sends;
+     * nothing is changed or sent here.
      */
     @GetMapping("/api/admin/race/preview")
     public Preview preview(@RequestParam(required = false) Phase phase,
-                           @RequestParam(required = false) Boolean pitStop) {
+                           @RequestParam(required = false) Boolean pitStop,
+                           @RequestParam(required = false) Boolean practice) {
         RaceState state = service.get();
         List<PreviewLine> lines = new ArrayList<>();
         String from = "ENGINEER";
-        if (phase == Phase.FINISH_LINE && state.getPhase() != Phase.FINISH_LINE) {
+        if (Boolean.TRUE.equals(practice) && !state.isPractice()) {
+            lines.add(new PreviewLine(null, RadioService.PRACTICE_OPEN));
+        } else if (phase == Phase.FINISH_LINE && state.getPhase() != Phase.FINISH_LINE) {
             from = "RACE_CONTROL";
             lines.add(new PreviewLine(null, radio.podiumLine()));
         } else if (Boolean.TRUE.equals(pitStop) && !state.isPitStop()) {
@@ -81,7 +85,7 @@ public class RaceController {
         }
         RaceState before = service.get();
         RaceState after = service.update(request.phase(), request.pitStop(), request.practice());
-        notifier.raceChanged(before.getPhase(), before.isPitStop(), after);
+        notifier.raceChanged(before.getPhase(), before.isPitStop(), before.isPractice(), after);
         return RaceResponse.of(after);
     }
 }

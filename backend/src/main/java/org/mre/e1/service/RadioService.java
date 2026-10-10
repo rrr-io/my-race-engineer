@@ -67,7 +67,7 @@ public class RadioService {
 
         lightsOut(team, phase).ifPresent(text ->
                 messages.add(new RadioMessage(Sender.ENGINEER, "LIGHTS_OUT", text, phaseStart)));
-        briefing(team, proof).ifPresent(text ->
+        (state.isPractice() ? practiceBriefing(proof) : briefing(team, proof)).ifPresent(text ->
                 messages.add(new RadioMessage(Sender.ENGINEER, "BRIEFING", text, briefingAt)));
         proofLine(team, proof).ifPresent(text ->
                 messages.add(new RadioMessage(Sender.ENGINEER, "PROOF", text, proofAt)));
@@ -109,6 +109,29 @@ public class RadioService {
             return Optional.empty();
         }
         return pick("LIGHTS_OUT", team.slug(), phase.ordinal()).map(body -> body.replace("{phase}", phase.label()));
+    }
+
+    /** What the engineer says when free practice opens: sent as a notification and shown in the admin preview. */
+    public static final String PRACTICE_OPEN = "Free practice is open! Send a certificate from an old vote: "
+            + "Race Control checks it for real, but it doesn't count for the race.";
+
+    /**
+     * The free practice call: like the briefing, only what is still to do, but with a certificate from an old vote.
+     * Before Race Control sets the categories it says so.
+     */
+    static Optional<String> practiceBriefing(ProofView proof) {
+        if (proof.categories().isEmpty()) {
+            return Optional.of("Free practice is open! Race Control is still setting the categories, hold on.");
+        }
+        List<String> todo = proof.categories().stream()
+                .filter(c -> c.state() == ProofState.MISSING || c.state() == ProofState.REJECTED)
+                .map(ProofView.CategoryProgress::name)
+                .toList();
+        if (todo.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of("Free practice is open! Send a certificate from an old vote for " + joinNames(todo)
+                + ". Race Control checks it for real, but it doesn't count for the race.");
     }
 
     public Optional<String> pitStop(Phase phase) {

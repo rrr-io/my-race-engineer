@@ -25,9 +25,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -43,9 +45,16 @@ public class ProofService {
 
     public record ImageData(byte[] bytes, String contentType) {}
 
-    /** The outcome of a review. {@code current} = it concerns today; {@code done} = the fan's day is now complete. */
+    /**
+     * The outcome of a review. {@code current} = it concerns what the fan is doing now (today, and the same session:
+     * free practice or race); {@code done} = that day is now complete; {@code practice} = a free practice proof.
+     */
     public record Decision(UUID crewId, ProofStatus status, String category, String reason, long proofId,
-                           boolean current, boolean done) {}
+                           boolean current, boolean done, boolean practice) {}
+
+    /** Uploads are open while a race phase is live, and during free practice; never in a pit stop. */
+    private static final Set<Phase> RUNNING =
+            EnumSet.of(Phase.SPRINT_RACE, Phase.GRAND_PRIX, Phase.FINAL_LAP);
 
     private final ProofRepository proofs;
     private final ProofStorage storage;
@@ -73,9 +82,10 @@ public class ProofService {
         this.maxImageBytes = maxImageBytes;
     }
 
+    /** The fan's day in the current session: free practice proofs and race proofs never mix. */
     @Transactional(readOnly = true)
     public ProofView today(UUID crewId) {
-        return progress(crewId, today());
+        return progress(crewId, today(), race.get().isPractice());
     }
 
     /**
@@ -102,8 +112,12 @@ public class ProofService {
                     new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG and WebP images are accepted")));
         }
 
+        RaceState raceState = race.get();
+        if (raceState.isPitStop() || !(raceState.isPractice() || RUNNING.contains(raceState.getPhase()))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Uploads are closed right now");
+        }
         LocalDate day = today();
-        Map<Long, ProofView.CategoryProgress> state = progress(crewId, day).categories().stream()
+        Map<Long, ProofView.CategoryProgress> state = progress(crewId, day, raceState.isPractice()).categories().stream()
                 .collect(Collectors.toMap(ProofView.CategoryProgress::id, Function.identity()));
         Map<Long, Integer> adding = new HashMap<>();
         categoryIds.forEach(id -> adding.merge(id, 1, Integer::sum));
@@ -117,7 +131,6 @@ public class ProofService {
             }
         }
 
-        RaceState raceState = race.get();
         List<String> stored = new ArrayList<>();
         try {
             for (int i = 0; i < files.size(); i++) {
@@ -128,7 +141,7 @@ public class ProofService {
                 proofs.save(new Proof(crewId, categoryIds.get(i), day, raceState.getPhase(), raceState.isPractice(),
                         stored.get(i), types.get(i).contentType(), files.get(i).length, now));
             }
-            return progress(crewId, day);
+            return progress(crewId, day, raceState.isPractice());
         } catch (IOException e) {
             stored.forEach(storage::deleteQuietly);
             throw new IllegalStateException("Could not store the screenshots", e);
@@ -191,9 +204,10 @@ public class ProofService {
 
     private Decision decision(Proof proof) {
         String category = categories.find(proof.getCategoryId()).map(Category::getName).orElse("category");
-        boolean current = proof.getDay().equals(today());
-        boolean done = progress(proof.getCrewId(), proof.getDay()).done();
-        return new Decision(proof.getCrewId(), proof.getStatus(), category, proof.getReason(), proof.getId(), current, done);
+        boolean current = proof.getDay().equals(today()) && proof.isPractice() == race.get().isPractice();
+        boolean done = progress(proof.getCrewId(), proof.getDay(), proof.isPractice()).done();
+        return new Decision(proof.getCrewId(), proof.getStatus(), category, proof.getReason(), proof.getId(), current, done,
+                proof.isPractice());
     }
 
     private Proof pendingOrThrow(long proofId) {
@@ -204,8 +218,10 @@ public class ProofService {
         return proof;
     }
 
-    private ProofView progress(UUID crewId, LocalDate day) {
-        List<Proof> ofTheDay = proofs.findByCrewIdAndDay(crewId, day);
+    private ProofView progress(UUID crewId, LocalDate day, boolean practice) {
+        List<Proof> ofTheDay = proofs.findByCrewIdAndDay(crewId, day).stream()
+                .filter(p -> p.isPractice() == practice)
+                .toList();
         List<ProofView.CategoryProgress> rows = new ArrayList<>();
         for (Category category : categories.active()) {
             List<Proof> mine = ofTheDay.stream().filter(p -> p.getCategoryId().equals(category.getId())).toList();

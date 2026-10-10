@@ -46,7 +46,11 @@ Pushing to `main` builds and deploys to `my-race-engineer.rrriooo.com`.
 
 Teams: `jay`, `jake`, `sunghoon`, `sunoo`, `jungwon`, `niki`.
 Phases: `GRID`, `SPRINT_RACE`, `GRAND_PRIX`, `FINAL_LAP`, `FINISH_LINE`.
-Free practice is a flag, not a phase: it can run alongside any phase, and toggling it resets the phase to `GRID`.
+Free practice is a session on the `GRID`, for trying uploads and reviews for real: it starts only from the Grid, phases and pit stops are locked while it's on, and ending it can move straight to a phase (`{ "practice": false, "phase": "SPRINT_RACE" }`). Fans send a certificate from an old vote, Race Control reviews it in `/admin`, and the fan gets the same radio calls and notifications as on race day. Practice proofs are kept apart from race proofs (their own day, their own daily limit) and never count for the podium.
+
+Uploads are open only while a race phase is live (`SPRINT_RACE`, `GRAND_PRIX`, `FINAL_LAP`) or during free practice, never in a pit stop.
+
+The Go Kart race in the app is something else: a practice race each fan runs alone on their phone, with every phase and a scripted review. Nothing in it reaches the server.
 
 ## Proofs
 
@@ -79,3 +83,11 @@ On iPhone, notifications only work once the app has been added to the Home Scree
 ## Admin
 
 Race Control panel at `/admin`. Default login `admin` / `admin`; override with `ADMIN_USER` and the `ADMIN_PASSWORD` secret.
+
+## Tests
+
+- Backend: `cd backend && mvn test`. Plain JUnit 5 unit tests (race rules, free practice, proofs, radio lines, podium, image checks) with small in-memory fakes from `TestData`: no Spring context and no database, so they run in well under a second.
+- Frontend: `cd frontend && npm test` (Vitest + jsdom + Testing Library). Lap times, radio labels, splash mode, the Go Kart certificate check, read-once Paddock announcements and the Race Control switches.
+
+Both run inside **Deploy** on every push to `main`: a red test stops the release. The **Tests** workflow runs the same tests on pull requests and on demand.
+

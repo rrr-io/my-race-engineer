@@ -495,3 +495,23 @@ button.check-row .check-state::after { content: ' ›'; }
 .gk-phase-mark { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--muted); padding-top: 4px; }
 .radio.is-earlier { opacity: 0.72; }
 .radio.is-earlier .radio-text { font-size: 15px; }
+
+/* Race Control: pit stop and free practice are switches, not one-off buttons */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.toggle-text { display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.toggle-state { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: var(--muted); }
+.toggle-state.is-on.is-pit { color: #FFB020; }
+.toggle-state.is-on.is-practice { color: #4A9EEA; }
+.switch {
+  position: relative; flex-shrink: 0; width: 56px; height: 32px; padding: 0; border: none; border-radius: 16px;
+  background: #3A3D45; cursor: pointer; transition: background 0.2s;
+}
+.switch-knob {
+  position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 12px; background: var(--text);
+  transition: transform 0.2s;
+}
+.switch.is-on .switch-knob { transform: translateX(24px); }
+.switch.is-pit.is-on { background: #FFB020; }
+.switch.is-practice.is-on { background: #4A9EEA; }
+.switch.is-on .switch-knob { background: #0E0F12; }
+.switch:disabled { opacity: 0.4; cursor: not-allowed; }

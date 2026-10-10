@@ -21,6 +21,9 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
+      # a few seconds; a red test stops the deploy
+      - run: npm test
+        working-directory: frontend
       - run: npm run build
         working-directory: frontend
       - uses: actions/upload-artifact@v4
@@ -37,7 +40,8 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-      - run: mvn -B -q package -DskipTests
+      # unit tests only (no Spring context, no database): they add seconds, and a red test stops the deploy
+      - run: mvn -B -q package
         working-directory: backend
       - run: cp backend/target/*.jar app.jar
       - uses: actions/upload-artifact@v4
