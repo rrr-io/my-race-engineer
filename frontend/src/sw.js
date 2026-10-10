@@ -8,5 +8,5 @@ clientsClaim()
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
 
-self.addEventListener('push', (event) => onPush(event, self.registration))
+self.addEventListener('push', (event) => onPush(event, self.registration, self.clients))
 self.addEventListener('notificationclick', (event) => onNotificationClick(event, self.clients))

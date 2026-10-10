@@ -88,6 +88,14 @@ Add the two keys as GitHub secrets `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` (l
 
 On iPhone, notifications only work once the app has been added to the Home Screen from Safari (iOS 16.4 or later).
 
+### Keeping the open app up to date
+
+The home reloads the race state every 30 seconds, but it doesn't wait for that when something happens:
+
+- when a push arrives, the service worker tells every open window to reload, so the phase or pit stop changes on screen without tapping anything;
+- tapping a notification with the app already open reloads it before bringing it forward;
+- the app also reloads when it comes back to the foreground or gets focus.
+
 ## Admin
 
 Race Control panel at `/admin`. Default login `admin` / `admin`; override with `ADMIN_USER` and the `ADMIN_PASSWORD` secret.
