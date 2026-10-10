@@ -10,7 +10,7 @@ async function sayHello(team) {
       navigator.serviceWorker.ready,
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
     ])
-    await reg.showNotification('Race ENGENEer', { body: team.radioCheck, tag: 'radio-check', icon: '/icons/icon-192-v2.png' })
+    await reg.showNotification('Race ENGENEer', { body: team.radioCheck, tag: 'radio-check', icon: '/icons/icon-192-v3.png' })
   } catch { /* the screen already says it worked */ }
 }
 

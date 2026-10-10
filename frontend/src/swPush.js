@@ -9,7 +9,7 @@ export function onPush(event, registration) {
     registration.showNotification(data.title || 'Race ENGENEer', {
       body: data.body || '',
       tag: data.tag,
-      icon: '/icons/icon-192-v2.png',
+      icon: '/icons/icon-192-v3.png',
       actions: Array.isArray(data.actions) ? data.actions : [],
       data: { url: data.url || '/', voteUrl: data.voteUrl || null }
     })
