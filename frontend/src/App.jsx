@@ -4,6 +4,7 @@ import { teamBySlug } from './teams.js'
 import Onboarding from './screens/Onboarding.jsx'
 import Home from './screens/Home.jsx'
 import RadioCheck from './screens/RadioCheck.jsx'
+import GoKart from './screens/GoKart.jsx'
 import Splash, { rememberSeen, splashMode } from './Splash.jsx'
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
   const [homeReady, setHomeReady] = useState(false)
   const [splashTeam] = useState(() => teamBySlug(storedTeam()) ?? null)
   const [mode] = useState(splashMode)
+  const [practice, setPractice] = useState(false)
 
   // remember when the fan last had the app on screen: a long absence brings back the start lights
   useEffect(() => {
@@ -46,11 +48,14 @@ export default function App() {
   }
 
   const radioDone = useCallback(() => setStatus('ready'), [])
+  const startPractice = useCallback(() => { setPractice(true); window.scrollTo(0, 0) }, [])
+  const endPractice = useCallback(() => { setPractice(false); window.scrollTo(0, 0) }, [])
 
   let screen = null
   if (status === 'onboarding') screen = <Onboarding onJoin={join} />
   else if (status === 'radio') screen = <RadioCheck team={teamBySlug(crew.team)} crewId={crew.id} onDone={radioDone} />
-  else if (status === 'ready') screen = <Home team={teamBySlug(crew.team)} crewId={crew.id} onReady={homeLoaded} />
+  else if (status === 'ready' && practice) screen = <GoKart team={teamBySlug(crew.team)} onLeave={endPractice} />
+  else if (status === 'ready') screen = <Home team={teamBySlug(crew.team)} crewId={crew.id} onReady={homeLoaded} onPractice={startPractice} />
 
   // same position in the tree whatever the screen, so the splash keeps its lights while the home mounts below it
   return (

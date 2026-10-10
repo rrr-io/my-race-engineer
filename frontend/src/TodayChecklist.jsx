@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { lapLine, lapShort, lapSoon } from './lap.js'
 import { useNow } from './useNow.js'
 
-const LABELS = { APPROVED: 'Approved', PENDING: 'In Beta Testing', REJECTED: 'To redo', MISSING: 'To do' }
+const LABELS = { APPROVED: 'Approved', PENDING: 'Under review', REJECTED: 'To redo', MISSING: 'To do' }
 
 const Mark = ({ state }) => {
   const common = { width: 20, height: 20, viewBox: '0 0 24 24', 'aria-hidden': true, fill: 'none', strokeWidth: 2.2,
@@ -26,8 +26,11 @@ const Chevron = ({ open }) => (
   </svg>
 )
 
-/** Today's job as a checklist docked at the bottom: one line closed, every category open. */
-export default function TodayChecklist({ radio, line, onProof, glow = false }) {
+/**
+ * Today's job as a checklist docked at the bottom: one line closed, every category open.
+ * `practice` is the Go Kart version: same checklist, no Korea-time lap.
+ */
+export default function TodayChecklist({ radio, line, onProof, glow = false, practice = false, uploadLabel = 'Upload proof' }) {
   const now = useNow()
   const [open, setOpen] = useState(false)
   const proof = radio?.proof
@@ -41,15 +44,15 @@ export default function TodayChecklist({ radio, line, onProof, glow = false }) {
   const rejected = count('REJECTED')
 
   let summary
-  if (done) summary = 'All done for today'
+  if (done) summary = practice ? 'All done' : 'All done for today'
   else if (missing === 0 && rejected === 0) summary = 'Waiting for Race Control'
   else summary = `${approved} of ${categories.length} approved`
 
   const toProof = () => { setOpen(false); onProof() }
   const details = []
-  if (!done && pending) details.push(`${pending} in Beta Testing`)
+  if (!done && pending) details.push(`${pending} under review`)
   if (!done && rejected) details.push(`${rejected} to redo`)
-  const soon = lapSoon(now) && !done
+  const soon = !practice && lapSoon(now) && !done
 
   return (
     <div className={`today-dock ${open ? 'is-open' : ''} ${glow ? 'is-glow' : ''}`}>
@@ -87,7 +90,7 @@ export default function TodayChecklist({ radio, line, onProof, glow = false }) {
               {radio.voteUrl && (
                 <a className="btn-action" href={radio.voteUrl} target="_blank" rel="noopener noreferrer">Open MNET+</a>
               )}
-              <button type="button" className="btn-action" onClick={toProof}>Upload proof</button>
+              <button type="button" className="btn-action" onClick={toProof}>{uploadLabel}</button>
             </div>
           )}
           {missing === 0 && rejected > 0 && (
@@ -95,16 +98,16 @@ export default function TodayChecklist({ radio, line, onProof, glow = false }) {
               <button type="button" className="btn-action" onClick={toProof}>Redo proof</button>
             </div>
           )}
-          <p className={`small ${soon ? 'today-soon' : 'muted'}`}>The proof day follows Korea time. {lapLine(now)}.</p>
+          {!practice && <p className={`small ${soon ? 'today-soon' : 'muted'}`}>The proof day follows Korea time. {lapLine(now)}.</p>}
         </section>
       )}
       <button type="button" className="today-bar" aria-expanded={open} aria-controls="today-panel" onClick={() => setOpen(!open)}>
         <span className="today-text">
-          <span className="eyebrow">TODAY CHECKLIST</span>
+          <span className="eyebrow">{practice ? 'PRACTICE CHECKLIST' : 'TODAY CHECKLIST'}</span>
           <span className="today-summary">{summary}</span>
         </span>
         <span className="today-side">
-          <span className={`today-lap ${soon ? 'today-soon' : 'muted'}`}>{lapShort(now)}</span>
+          {!practice && <span className={`today-lap ${soon ? 'today-soon' : 'muted'}`}>{lapShort(now)}</span>}
           <span className="today-meter" aria-hidden="true">
             {categories.map((c) => <span key={c.id} className={`seg is-${c.state.toLowerCase()}`} />)}
           </span>

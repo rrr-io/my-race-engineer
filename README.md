@@ -50,7 +50,7 @@ Free practice is a flag, not a phase: it can run alongside any phase, and toggli
 
 ## Proofs
 
-Race Control sets the voting categories from `/admin` (one per line; change them at each stage). Every day (Korean time, KST) a fan sends any number of screenshots, each for one category, and needs at least one approved per category to be done. Before that the engineer briefs them on MNET+ and the categories still to do. Each screenshot is reviewed on its own in `/admin` (Beta Testing): approved, or rejected with a reason and sent again. The fan gets a push when a screenshot is rejected and when the whole day is approved.
+Race Control sets the voting categories from `/admin` (one per line; change them at each stage). Every day (Korean time, KST) a fan sends any number of screenshots, each for one category, and needs at least one approved per category to be done. Before that the engineer briefs them on MNET+ and the categories still to do. Each screenshot is reviewed on its own in `/admin` (Under review): approved, or rejected with a reason and sent again. The fan gets a push when a screenshot is rejected and when the whole day is approved.
 
 Limits: `PROOFS_MAX_PER_SUBMISSION` (default 10) and `PROOFS_MAX_PER_CATEGORY` per day (default 5). Screenshots are stored on disk in `PROOFS_DIR` (a Docker volume in production) and are only served to the admin.
 

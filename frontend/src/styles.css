@@ -416,3 +416,81 @@ button.check-row .check-state::after { content: ' ›'; }
 .splash-hold { margin: 0; text-align: center; font-size: 15px; line-height: 1.45; color: var(--muted); }
 .splash-retry { max-width: 326px; }
 .splash.is-neutral .splash-retry { --on-accent: #FFFFFF; }
+
+/* Go Kart: the practice race */
+.gk-avatar {
+  display: block; flex-shrink: 0; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--kart); background: var(--kart-bg, #FBEDE6);
+}
+.gk-pick { padding: 28px 20px 24px; gap: 20px; }
+.gk-pick-head h1 { margin: 6px 0 8px; font-size: 32px; line-height: 1.1; font-weight: 900; }
+.gk-pick-head p { margin: 0; font-size: 15px; line-height: 1.45; }
+.gk-karts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.gk-kart {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 10px; min-width: 0;
+  background: var(--surface); color: var(--text); border: 2px solid var(--line); border-radius: 10px; cursor: pointer; font: inherit;
+}
+.gk-kart.is-picked { border-color: var(--kart); }
+.gk-kart .gk-avatar { border-width: 3px; }
+.gk-kart svg { max-width: 100%; height: auto; }
+.gk-kart-name { font-size: 18px; font-weight: 900; }
+.gk-kart-tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); }
+.gk-kart.is-picked .gk-kart-tag { color: var(--kart); }
+.gk-pick-notes { display: flex; flex-direction: column; gap: 8px; line-height: 1.4; }
+.gk-pick-notes p { margin: 0; }
+.gk-pick-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+.gk-go { background: var(--kart); color: #0E0F12; }
+
+.gk-bar {
+  display: flex; align-items: center; justify-content: space-between; padding: 14px 20px;
+  background: repeating-linear-gradient(-45deg, var(--kart) 0 10px, var(--ground) 10px 20px);
+}
+.gk-bar-tag {
+  background: var(--ground); color: var(--text); padding: 4px 8px; border: none;
+  font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.14em;
+}
+.gk-leave { font-family: var(--sans); font-size: 14px; letter-spacing: 0; cursor: pointer; }
+.gokart .race-status { border-top: none; border-bottom: 1px solid var(--line); }
+
+.gk-track {
+  position: relative; margin: 16px 20px 0; height: 84px; border-radius: 8px; background: var(--surface); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.gk-lane-line {
+  position: absolute; left: 0; right: 0; top: 41px; height: 2px;
+  background: repeating-linear-gradient(90deg, #4A4D55 0 12px, transparent 12px 22px);
+}
+.gokart:not(.is-pit) .gk-lane-line { animation: lane-run 0.6s linear infinite; }
+@keyframes lane-run { to { background-position: -22px 0; } }
+.gk-flag {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 14px;
+  background: repeating-conic-gradient(#F4F5F7 0 25%, #0E0F12 0 50%) 0 0 / 14px 14px;
+}
+.gk-runner {
+  position: absolute; left: calc(10px + (100% - 66px) * var(--p) / 100); transition: left 1.2s ease-out;
+}
+.gk-runner.is-me { top: 4px; }
+.gk-runner.is-rival { top: 46px; }
+.gk-track.is-paused .gk-runner { filter: saturate(0.4); }
+.gk-lights { position: relative; }
+.gk-lights .start-light { --lit: var(--accent); }
+
+.gokart.is-pit .gk-track { box-shadow: inset 0 0 0 2px #FFB020; }
+.gk-raceday { border-style: dashed; color: var(--muted); cursor: default; }
+.msg-actions .gk-raceday:first-child { background: transparent; color: var(--muted); border-color: #4A4D55; }
+.feed > p { margin: 0; }
+
+.gk-podium .podium-team { gap: 6px; }
+.gk-podium .is-p1 .gk-avatar { box-shadow: 0 0 0 0 var(--accent); animation: p1-glow 1.6s ease-in-out 2.2s infinite; }
+.gk-podium-radio { width: 100%; max-width: 420px; opacity: 0; animation: fade-up 0.4s ease-out 2.2s forwards; }
+.gk-podium-actions { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 8px; opacity: 0; animation: fade-up 0.4s ease-out 2.4s forwards; }
+@media (prefers-reduced-motion: reduce) { .gk-podium-radio, .gk-podium-actions { opacity: 1; } }
+
+.gk-card-faces { display: flex; gap: 6px; }
+.gk-card-title { margin: 0; font-size: 18px; line-height: 1.25; font-weight: 700; }
+.gk-latest { display: flex; flex-direction: column; gap: 18px; }
+.gk-earlier { display: flex; flex-direction: column; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+.gk-earlier-item { display: flex; flex-direction: column; gap: 8px; }
+.gk-phase-mark { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--muted); padding-top: 4px; }
+.radio.is-earlier { opacity: 0.72; }
+.radio.is-earlier .radio-text { font-size: 15px; }

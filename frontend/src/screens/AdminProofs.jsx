@@ -45,7 +45,7 @@ export default function ProofsPanel({ auth, onLogout, onCount }) {
 
   return (
     <div className="admin-body">
-      <div className="eyebrow">BETA TESTING · {items.length} WAITING</div>
+      <div className="eyebrow">UNDER REVIEW · {items.length} WAITING</div>
       {items.length === 0 && <p className="muted">No proofs waiting for review.</p>}
       {groupByFan(items).map((group) => (
         <FanGroup key={`${group[0].crewId}|${group[0].day}`} auth={auth} group={group} onLogout={onLogout} onDone={load} />

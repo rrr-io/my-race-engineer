@@ -10,13 +10,14 @@ import RadioHead from '../RadioHead.jsx'
 import { teamStyle } from '../teams.js'
 import { useNow } from '../useNow.js'
 import { PodiumCard, PodiumCeremony, useCeremony } from '../Podium.jsx'
+import { KARTS, practiceDone } from '../gokart.js'
 
 const GLOW_MS = 8000
 
 // Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't.
 const ACTION_PHASES = ['SPRINT_RACE', 'GRAND_PRIX', 'FINAL_LAP']
 
-export default function Home({ team, crewId, onReady }) {
+export default function Home({ team, crewId, onReady, onPractice }) {
   const { radio, offline, reload } = useRadio(crewId)
   useEffect(() => { if (radio || offline) onReady?.() }, [radio, offline, onReady])
   const racing = !!radio && ACTION_PHASES.includes(radio.phase) && !radio.pitStop
@@ -109,6 +110,8 @@ export default function Home({ team, crewId, onReady }) {
         {podium.length > 0 && <PodiumCard podium={podium} myTeam={team.slug} onReplay={ceremony.show} />}
 
         {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} />}
+
+        {onPractice && <GoKartCard onStart={onPractice} />}
       </main>
 
       {racing && <TodayChecklist radio={radio} line={todayLine} onProof={goToProof} glow={boardGlow} />}
@@ -141,4 +144,28 @@ function useBoardGlow(crewId, board) {
     return () => clearTimeout(t)
   }, [crewId, board])
   return glow
+}
+
+/** The way into the Go Kart practice race, at the end of the feed. */
+function GoKartCard({ onStart }) {
+  const [again] = useState(practiceDone)
+  return (
+    <section className="card gk-card" aria-labelledby="gk-card-title">
+      <div className="proof-title">
+        <div className="eyebrow">GO KART · PRACTICE</div>
+        <span className="gk-card-faces" aria-hidden="true">
+          {Object.values(KARTS).map((k) => (
+            <img key={k.slug} className="gk-avatar" src={k.img} alt="" width="32" height="32"
+                 style={{ '--kart': k.color, '--kart-bg': k.bg }} />
+          ))}
+        </span>
+      </div>
+      <h2 id="gk-card-title" className="gk-card-title">{again ? 'Practice again' : 'Try the whole race on a tiny track'}</h2>
+      <p className="muted small">
+        Race Acorn or Potato through every phase: Grid, lights out, proof review, pit stop, Final Lap, podium.
+        Nothing counts and nothing leaves your phone.
+      </p>
+      <button type="button" className="btn-secondary" onClick={onStart}>{again ? 'Race again' : 'Start practice'}</button>
+    </section>
+  )
 }

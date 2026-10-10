@@ -4,7 +4,7 @@ import { prepareImage } from './images.js'
 import { lapLine } from './lap.js'
 import { useNow } from './useNow.js'
 
-const TAGS = { MISSING: 'TO DO', PENDING: 'IN BETA TESTING', APPROVED: 'APPROVED', REJECTED: 'TO REDO' }
+const TAGS = { MISSING: 'TO DO', PENDING: 'UNDER REVIEW', APPROVED: 'APPROVED', REJECTED: 'TO REDO' }
 
 const messageFor = (err) => {
   if (err.status === 400) return "That wasn't accepted: use JPEG, PNG or WebP screenshots, and only categories on the list."
@@ -87,7 +87,7 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false 
               <strong>{c.name}</strong>
               <span className="pit-tag">{TAGS[c.state]}</span>
             </div>
-            {c.state === 'PENDING' && <p className="muted small">In review by Race Control. You'll get a radio call with the result.</p>}
+            {c.state === 'PENDING' && <p className="muted small">Under review by Race Control. You'll get a radio call with the result.</p>}
             {c.state === 'REJECTED' && <p className="error small">Rejected: {c.reason}</p>}
             {mine.length > 0 && (
               <div className="thumbs">
