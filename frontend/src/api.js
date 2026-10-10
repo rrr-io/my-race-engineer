@@ -6,6 +6,14 @@ export const storedCrewId = () => {
 export const storeCrewId = (id) => {
   try { localStorage.setItem(CREW_KEY, id) } catch { /* no storage */ }
 }
+const TEAM_KEY = 'e1.team'
+/** The fan's team, kept so the splash can wear its colours before anything has loaded. */
+export const storedTeam = () => {
+  try { return localStorage.getItem(TEAM_KEY) } catch { return null }
+}
+export const storeTeam = (slug) => {
+  try { localStorage.setItem(TEAM_KEY, slug) } catch { /* no storage */ }
+}
 export const clearCrewId = () => {
   try { localStorage.removeItem(CREW_KEY) } catch { /* ignore */ }
 }
@@ -98,3 +106,11 @@ export const updateRaceEvent = (auth, id, event) =>
   request(`/admin/race-weekend/${id}`, { method: 'PUT', headers: basic(auth), body: JSON.stringify(event) })
 export const deleteRaceEvent = (auth, id) =>
   request(`/admin/race-weekend/${id}`, { method: 'DELETE', headers: basic(auth) })
+
+export const adminPaddock = (auth) => request('/admin/paddock', { headers: basic(auth) })
+export const putChant = (auth, team, text) =>
+  request(`/admin/paddock/chants/${team}`, { method: 'PUT', headers: basic(auth), body: JSON.stringify({ text }) })
+export const sendPaddock = (auth, team, body) =>
+  request(`/admin/paddock/${team}/send`, { method: 'POST', headers: basic(auth), body: JSON.stringify(body) })
+export const deletePaddock = (auth, id) =>
+  request(`/admin/paddock/messages/${id}`, { method: 'DELETE', headers: basic(auth) })

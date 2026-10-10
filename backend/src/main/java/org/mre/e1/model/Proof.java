@@ -100,4 +100,8 @@ public class Proof {
     public String getFileName() { return fileName; }
     public String getContentType() { return contentType; }
     public Instant getCreatedAt() { return createdAt; }
+    public Instant getReviewedAt() { return reviewedAt; }
+
+    /** The last thing that happened to this proof: its review, or else its upload. */
+    public Instant getLastActivityAt() { return reviewedAt != null ? reviewedAt : createdAt; }
 }

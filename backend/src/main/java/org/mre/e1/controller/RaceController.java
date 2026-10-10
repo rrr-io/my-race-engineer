@@ -60,7 +60,10 @@ public class RaceController {
         RaceState state = service.get();
         List<PreviewLine> lines = new ArrayList<>();
         String from = "ENGINEER";
-        if (Boolean.TRUE.equals(pitStop) && !state.isPitStop()) {
+        if (phase == Phase.FINISH_LINE && state.getPhase() != Phase.FINISH_LINE) {
+            from = "RACE_CONTROL";
+            lines.add(new PreviewLine(null, radio.podiumLine()));
+        } else if (Boolean.TRUE.equals(pitStop) && !state.isPitStop()) {
             from = "RACE_CONTROL";
             radio.pitStop(state.getPhase()).ifPresent(text -> lines.add(new PreviewLine(null, text)));
         } else if (phase != null && phase != state.getPhase()) {

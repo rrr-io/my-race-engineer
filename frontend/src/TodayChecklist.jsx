@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { lapLine, lapSoon } from './lap.js'
+import { lapLine, lapShort, lapSoon } from './lap.js'
 import { useNow } from './useNow.js'
 
 const LABELS = { APPROVED: 'Approved', PENDING: 'In Beta Testing', REJECTED: 'To redo', MISSING: 'To do' }
@@ -36,6 +36,7 @@ export default function TodayChecklist({ radio, line, onProof, glow = false }) {
   const { categories, done } = proof
   const count = (state) => categories.filter((c) => c.state === state).length
   const approved = count('APPROVED')
+  const pending = count('PENDING')
   const missing = count('MISSING')
   const rejected = count('REJECTED')
 
@@ -45,6 +46,10 @@ export default function TodayChecklist({ radio, line, onProof, glow = false }) {
   else summary = `${approved} of ${categories.length} approved`
 
   const toProof = () => { setOpen(false); onProof() }
+  const details = []
+  if (!done && pending) details.push(`${pending} in Beta Testing`)
+  if (!done && rejected) details.push(`${rejected} to redo`)
+  const soon = lapSoon(now) && !done
 
   return (
     <div className={`today-dock ${open ? 'is-open' : ''} ${glow ? 'is-glow' : ''}`}>
@@ -56,14 +61,26 @@ export default function TodayChecklist({ radio, line, onProof, glow = false }) {
               <span>"{line}"</span>
             </p>
           )}
+          {details.length > 0 && <p className="muted small">{details.join(' · ')}</p>}
           <ul className="checklist">
-            {categories.map((c) => (
-              <li key={c.id} className={`check-item is-${c.state.toLowerCase()}`}>
-                <Mark state={c.state} />
-                <span className="check-name">{c.name}</span>
-                <span className="check-state">{LABELS[c.state]}</span>
-              </li>
-            ))}
+            {categories.map((c) => {
+              const todo = c.state === 'MISSING' || c.state === 'REJECTED'
+              const inner = (
+                <>
+                  <Mark state={c.state} />
+                  <span className="check-name">{c.name}</span>
+                  <span className="check-state">{LABELS[c.state]}</span>
+                </>
+              )
+              return (
+                <li key={c.id} className={`check-item is-${c.state.toLowerCase()}`}>
+                  {todo
+                    ? <button type="button" className="check-row" onClick={toProof}
+                              aria-label={`${c.name}: ${LABELS[c.state]}. Upload the screenshot`}>{inner}</button>
+                    : <span className="check-row">{inner}</span>}
+                </li>
+              )
+            })}
           </ul>
           {missing > 0 && (
             <div className="today-actions">
@@ -78,18 +95,19 @@ export default function TodayChecklist({ radio, line, onProof, glow = false }) {
               <button type="button" className="btn-action" onClick={toProof}>Redo proof</button>
             </div>
           )}
+          <p className={`small ${soon ? 'today-soon' : 'muted'}`}>The proof day follows Korea time. {lapLine(now)}.</p>
         </section>
       )}
       <button type="button" className="today-bar" aria-expanded={open} aria-controls="today-panel" onClick={() => setOpen(!open)}>
         <span className="today-text">
           <span className="eyebrow">TODAY CHECKLIST</span>
-          <span className="today-summary">
-            <b>{summary}</b>
-            <span className={lapSoon(now) && !done ? 'today-soon' : 'muted'}> · {lapLine(now)}</span>
-          </span>
+          <span className="today-summary">{summary}</span>
         </span>
-        <span className="today-meter" aria-hidden="true">
-          {categories.map((c) => <span key={c.id} className={`seg is-${c.state.toLowerCase()}`} />)}
+        <span className="today-side">
+          <span className={`today-lap ${soon ? 'today-soon' : 'muted'}`}>{lapShort(now)}</span>
+          <span className="today-meter" aria-hidden="true">
+            {categories.map((c) => <span key={c.id} className={`seg is-${c.state.toLowerCase()}`} />)}
+          </span>
         </span>
         <Chevron open={open} />
       </button>

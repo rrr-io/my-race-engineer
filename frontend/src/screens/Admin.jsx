@@ -6,6 +6,7 @@ import {
 import LivePanel from './AdminLive.jsx'
 import ProofsPanel from './AdminProofs.jsx'
 import WeekendPanel from './AdminWeekend.jsx'
+import PaddockPanel from './AdminPaddock.jsx'
 
 export default function Admin() {
   const [auth, setAuth] = useState(null)
@@ -81,6 +82,7 @@ function Panel({ auth, onLogout }) {
       <nav className="tabs" role="tablist" aria-label="Race Control sections">
         {tabButton('live', 'Live')}
         {tabButton('proofs', pending ? `Proofs (${pending})` : 'Proofs')}
+        {tabButton('paddock', 'Paddock')}
         {tabButton('weekend', 'Weekend')}
         {tabButton('setup', 'Setup')}
       </nav>
@@ -88,6 +90,7 @@ function Panel({ auth, onLogout }) {
       {tab === 'setup' && <SetupPanel auth={auth} onLogout={onLogout} />}
       {tab === 'proofs' && <ProofsPanel auth={auth} onLogout={onLogout} onCount={setPending} />}
       {tab === 'weekend' && <WeekendPanel auth={auth} onLogout={onLogout} />}
+      {tab === 'paddock' && <PaddockPanel auth={auth} onLogout={onLogout} />}
     </>
   )
 }

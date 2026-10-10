@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export const messageKey = (m) => `${m.kind}|${m.text}`
+export const messageKey = (m) => `${m.kind}|${m.id ?? ''}|${m.text}`
 
 const storeKey = (crewId) => `e1.seen.${crewId}`
 const read = (crewId) => {

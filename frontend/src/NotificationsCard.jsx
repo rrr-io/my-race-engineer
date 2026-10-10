@@ -1,4 +1,5 @@
 import { usePush } from './usePush.js'
+import RadioHead from './RadioHead.jsx'
 
 export default function NotificationsCard({ crewId }) {
   const { status, busy, error, enable, disable } = usePush(crewId)
@@ -28,7 +29,7 @@ export default function NotificationsCard({ crewId }) {
   return (
     <section className="notify">
       <article className="radio">
-        <div className="radio-label">RADIO · ENGINEER</div>
+        <RadioHead />
         <p className="radio-text">
           {install
             ? '"To get my radio calls on iPhone, add this app to your Home Screen first."'

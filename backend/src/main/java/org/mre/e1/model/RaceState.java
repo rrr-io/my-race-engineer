@@ -29,11 +29,22 @@ public class RaceState {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    /** When the current phase began (Lights Out time). */
+    @Column(name = "phase_started_at")
+    private Instant phaseStartedAt;
+
+    /** When the current pit stop began; null when there is none. */
+    @Column(name = "pit_stop_started_at")
+    private Instant pitStopStartedAt;
+
     protected RaceState() {
     }
 
     /** Switching practice on or off always sends the race back to the grid; an explicit phase in the same request wins. */
     public void update(Phase newPhase, Boolean newPitStop, Boolean newPractice) {
+        Instant now = Instant.now();
+        Phase oldPhase = this.phase;
+        boolean oldPitStop = this.pitStop;
         if (newPractice != null && newPractice != this.practice) {
             this.practice = newPractice;
             this.phase = Phase.GRID;
@@ -44,11 +55,21 @@ public class RaceState {
         if (newPitStop != null) {
             this.pitStop = newPitStop;
         }
-        this.updatedAt = Instant.now();
+        if (this.phase != oldPhase) {
+            this.phaseStartedAt = now;
+        }
+        if (this.pitStop && !oldPitStop) {
+            this.pitStopStartedAt = now;
+        } else if (!this.pitStop) {
+            this.pitStopStartedAt = null;
+        }
+        this.updatedAt = now;
     }
 
     public Phase getPhase() { return phase; }
     public boolean isPitStop() { return pitStop; }
     public boolean isPractice() { return practice; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getPhaseStartedAt() { return phaseStartedAt != null ? phaseStartedAt : updatedAt; }
+    public Instant getPitStopStartedAt() { return pitStopStartedAt != null ? pitStopStartedAt : updatedAt; }
 }

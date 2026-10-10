@@ -2,6 +2,7 @@ package org.mre.e1.controller;
 
 import org.mre.e1.model.CrewMember;
 import org.mre.e1.repository.CrewMemberRepository;
+import org.mre.e1.service.PaddockService;
 import org.mre.e1.service.ProofService;
 import org.mre.e1.service.RaceService;
 import org.mre.e1.service.RadioService;
@@ -24,20 +25,23 @@ public class RadioController {
     private final RadioService radio;
     private final ProofService proofs;
     private final VoteService vote;
+    private final PaddockService paddock;
 
     public RadioController(CrewMemberRepository crew, RaceService race, RadioService radio, ProofService proofs,
-                           VoteService vote) {
+                           VoteService vote, PaddockService paddock) {
         this.crew = crew;
         this.race = race;
         this.radio = radio;
         this.proofs = proofs;
         this.vote = vote;
+        this.paddock = paddock;
     }
 
     @GetMapping("/{id}/radio")
     public RadioService.Radio get(@PathVariable UUID id) {
         CrewMember member = crew.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        return radio.forTeam(member.getTeam(), race.get(), proofs.today(id), vote.url());
+        return radio.forTeam(member.getTeam(), race.get(), proofs.today(id), vote.url(),
+                paddock.forTeam(member.getTeam()));
     }
 }

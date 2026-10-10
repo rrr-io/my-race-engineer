@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import RadioHead from '../RadioHead.jsx'
 import { usePush } from '../usePush.js'
+import { teamStyle } from '../teams.js'
 
 /** Once radio calls are on, the engineer says hello as a real notification, so the fan sees one works. */
 async function sayHello(team) {
@@ -60,14 +62,14 @@ export default function RadioCheck({ team, crewId, onDone }) {
 
   const ready = status === 'on'
   return (
-    <div className="screen onboarding" style={{ '--accent': team.accent }}>
+    <div className="screen onboarding" style={teamStyle(team)}>
       <header className="onb-head">
         <div className="eyebrow">STEP 2 OF 2 · RADIO CHECK</div>
         <h1>Team {team.member}</h1>
       </header>
 
       <article className="radio">
-        <div className="radio-label">RADIO · ENGINEER</div>
+        <RadioHead />
         <p className="radio-text">"{line}"</p>
       </article>
       {body}

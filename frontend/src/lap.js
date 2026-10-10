@@ -23,4 +23,12 @@ export function lapLine(now = Date.now()) {
   return `New lap at ${timeFmt.format(next)} your time`
 }
 
+/** Short form for tight spots: "New lap at 17:00", or "New lap in 42 min" during the last hour. */
+export function lapShort(now = Date.now()) {
+  const next = nextLap(now)
+  const left = next.getTime() - now
+  if (left <= SOON_MS) return `New lap in ${Math.max(1, Math.ceil(left / 60000))} min`
+  return `New lap at ${timeFmt.format(next)}`
+}
+
 export const lapSoon = (now = Date.now()) => nextLap(now).getTime() - now <= SOON_MS

@@ -216,7 +216,9 @@ public class ProofService {
         boolean done = !rows.isEmpty() && rows.stream().allMatch(r -> r.state() == ProofState.APPROVED);
         boolean needsAction = rows.stream().anyMatch(r -> r.state() == ProofState.MISSING || r.state() == ProofState.REJECTED);
         Long latest = ofTheDay.stream().map(Proof::getId).max(Long::compare).orElse(null);
-        return new ProofView(day, done, needsAction, rows, maxPerSubmission, maxPerCategory, latest);
+        Instant lastActivity = ofTheDay.stream().map(Proof::getLastActivityAt).filter(java.util.Objects::nonNull)
+                .max(Instant::compareTo).orElse(null);
+        return new ProofView(day, done, needsAction, rows, maxPerSubmission, maxPerCategory, latest, lastActivity);
     }
 
     private static ProofState stateOf(List<Proof> mine) {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TEAMS } from '../teams.js'
+import { TEAMS, teamStyle } from '../teams.js'
 
 export default function Onboarding({ onJoin }) {
   const [picked, setPicked] = useState(null)
@@ -14,7 +14,7 @@ export default function Onboarding({ onJoin }) {
   }
 
   return (
-    <div className="screen onboarding" style={team ? { '--accent': team.accent } : undefined}>
+    <div className="screen onboarding" style={team ? teamStyle(team) : undefined}>
       <header className="onb-head">
         <div className="eyebrow">STEP 1 OF 2 · PICK YOUR DRIVER</div>
         <h1>Who are you racing for?</h1>
@@ -34,7 +34,7 @@ export default function Onboarding({ onJoin }) {
           >
             <span className="driver-swatch" aria-hidden="true" />
             <span className="driver-name">{t.member}</span>
-            <span className="driver-team">Team {t.member}</span>
+            <span className="driver-team">{t.livery}</span>
           </button>
         ))}
       </div>

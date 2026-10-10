@@ -117,6 +117,39 @@ public class PushNotifier {
         if (state.isPitStop() && !oldPitStop) {
             dispatcher.execute(() -> notifyPitStop(phase));
         }
+        if (phase == Phase.FINISH_LINE && oldPhase != Phase.FINISH_LINE) {
+            dispatcher.execute(this::notifyPodium);
+        }
+    }
+
+    /** A Paddock announcement: only the devices of that team's crew get it. */
+    public void paddock(Team team, String title, String body) {
+        if (sender == null) {
+            return;
+        }
+        dispatcher.execute(() -> {
+            try {
+                List<PushSubscription> all = subscriptions.all();
+                Map<UUID, Team> teamByCrew = crew
+                        .findAllById(all.stream().map(PushSubscription::getCrewId).distinct().toList())
+                        .stream()
+                        .collect(Collectors.toMap(CrewMember::getId, CrewMember::getTeam));
+                Payload payload = new Payload(title, body, "paddock", "/");
+                all.stream().filter(s -> teamByCrew.get(s.getCrewId()) == team)
+                        .forEach(s -> workers.execute(() -> deliver(s, payload)));
+            } catch (RuntimeException e) {
+                log.error("Paddock push failed", e);
+            }
+        });
+    }
+
+    private void notifyPodium() {
+        try {
+            Payload payload = new Payload("Race Control · Finish Line", radio.podiumLine(), "podium", "/");
+            subscriptions.all().forEach(s -> workers.execute(() -> deliver(s, payload)));
+        } catch (RuntimeException e) {
+            log.error("Podium broadcast failed", e);
+        }
     }
 
     /** Tells one fan how Race Control judged their proof, in their engineer's voice. */

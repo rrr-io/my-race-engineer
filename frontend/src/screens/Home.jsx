@@ -5,15 +5,20 @@ import NotificationsCard from '../NotificationsCard.jsx'
 import ProofCard from '../ProofCard.jsx'
 import RaceWeekendBand from '../RaceWeekendBand.jsx'
 import TodayChecklist from '../TodayChecklist.jsx'
-import { phaseInfo } from '../phases.js'
+import RaceHeader from '../RaceHeader.jsx'
+import RadioHead from '../RadioHead.jsx'
+import { teamStyle } from '../teams.js'
+import { useNow } from '../useNow.js'
+import { PodiumCard, PodiumCeremony, useCeremony } from '../Podium.jsx'
 
-const GLOW_MS = 4000
+const GLOW_MS = 8000
 
 // Only these phases ask the fan to do something; Grid, Finish Line and a pit stop don't.
 const ACTION_PHASES = ['SPRINT_RACE', 'GRAND_PRIX', 'FINAL_LAP']
 
-export default function Home({ team, crewId }) {
+export default function Home({ team, crewId, onReady }) {
   const { radio, offline, reload } = useRadio(crewId)
+  useEffect(() => { if (radio || offline) onReady?.() }, [radio, offline, onReady])
   const racing = !!radio && ACTION_PHASES.includes(radio.phase) && !radio.pitStop
   // the briefing (go vote) stays in the feed, right above the proof card; while racing the proof line moves to the checklist
   const feed = (radio?.messages ?? []).filter((m) =>
@@ -21,7 +26,9 @@ export default function Home({ team, crewId }) {
   const todayLine = racing ? (radio.messages.find((m) => m.kind === 'PROOF')?.text ?? null) : null
   const { isNew, dismiss } = useNewMessage(crewId, radio ? feed : undefined)
   const boardGlow = useBoardGlow(crewId, racing ? `${radio.phase}|${radio.proof?.categories.map((c) => c.id).join(',')}` : null)
-  const phase = radio ? phaseInfo(radio.phase) : null
+  const now = useNow()
+  const podium = radio?.phase === 'FINISH_LINE' ? (radio.podium ?? []) : []
+  const ceremony = useCeremony(crewId, podium)
   const [highlight, setHighlight] = useState(false)
   const timer = useRef(null)
   const handledLink = useRef(false)
@@ -53,14 +60,8 @@ export default function Home({ team, crewId }) {
   }, [goToProof])
 
   return (
-    <div className={`screen home ${racing ? 'has-dock' : ''}`} style={{ '--accent': team.accent }}>
-      <header className="home-head">
-        <div>
-          <div className="eyebrow">RACE ENGINEER</div>
-          <div className="team-name">Team {team.member}</div>
-        </div>
-        {phase && <span className="phase-pill">{phase.label.toUpperCase()}</span>}
-      </header>
+    <div className={`screen home ${racing ? 'has-dock' : ''}`} style={teamStyle(team)}>
+      <RaceHeader team={team} radio={radio} />
 
       {offline && (
         <div className="offline-row" role="status">
@@ -68,22 +69,12 @@ export default function Home({ team, crewId }) {
         </div>
       )}
 
-      {phase && (
-        <div className="status-row">
-          <span>{phase.blurb}</span>
-          <span className="tags">
-            {radio.practice && <span className="pit-tag">FREE PRACTICE</span>}
-            {radio.pitStop && <span className="pit-tag">PIT STOP</span>}
-          </span>
-        </div>
-      )}
-
       <RaceWeekendBand team={team} />
 
       <main className="feed">
         <article className="radio">
-          <div className="radio-label">RADIO · ENGINEER</div>
-          <p className="radio-text">"{team.welcome}"</p>
+          <RadioHead />
+          <div className="radio-body"><p className="radio-text">"{team.welcome}"</p></div>
         </article>
 
         <NotificationsCard crewId={crewId} />
@@ -93,21 +84,21 @@ export default function Home({ team, crewId }) {
           const fresh = isNew(key)
           return (
             <article className={`radio ${fresh ? 'is-new' : ''}`} key={key} onClick={fresh ? dismiss : undefined}>
-              <div className="radio-head">
-                <div className={`radio-label ${m.from === 'RACE_CONTROL' ? 'is-control' : ''}`}>
-                  {m.from === 'RACE_CONTROL' ? 'RADIO · RACE CONTROL' : 'RADIO · ENGINEER'}
-                </div>
-                {fresh && (
-                  <span className="new-chip">
-                    <span aria-hidden="true">● </span>NEW<span className="sr-only"> message</span>
-                  </span>
-                )}
-              </div>
+              <RadioHead from={m.from} kind={m.kind} fresh={fresh} at={m.at} now={now} />
               <div className="radio-body">
-                <p className="radio-text">"{m.text}"</p>
-                {m.kind === 'BRIEFING' && radio.voteUrl && (
+                <p className={`radio-text ${m.kind === 'CHANT' ? 'is-chant' : ''}`}>
+                  {m.kind === 'CHANT' ? m.text : `"${m.text}"`}
+                </p>
+                {m.kind === 'BRIEFING' && (
                   <div className="msg-actions">
-                    <a className="btn-action" href={radio.voteUrl} target="_blank" rel="noopener noreferrer">Open MNET+</a>
+                    {radio.voteUrl && (
+                      <a className="btn-action" href={radio.voteUrl} target="_blank" rel="noopener noreferrer">Open MNET+</a>
+                    )}
+                    {racing && (
+                      <button type="button" className="btn-action" onClick={(e) => { e.stopPropagation(); goToProof() }}>
+                        Upload proof
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -115,10 +106,14 @@ export default function Home({ team, crewId }) {
           )
         })}
 
+        {podium.length > 0 && <PodiumCard podium={podium} myTeam={team.slug} onReplay={ceremony.show} />}
+
         {racing && <ProofCard crewId={crewId} proof={radio.proof} onChanged={reload} highlight={highlight || boardGlow} />}
       </main>
 
       {racing && <TodayChecklist radio={radio} line={todayLine} onProof={goToProof} glow={boardGlow} />}
+
+      {ceremony.open && <PodiumCeremony podium={podium} myTeam={team.slug} onClose={ceremony.close} />}
     </div>
   )
 }
