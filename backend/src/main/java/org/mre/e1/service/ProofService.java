@@ -190,8 +190,15 @@ public class ProofService {
     /** doneBefore: the day was already complete, so an extra certificate approved now doesn't announce it again. */
     private Decision decision(Proof proof, boolean doneBefore) {
         String category = categories.find(proof.getCategoryId()).map(Category::getName).orElse("category");
+        ProofView day = progress(proof.getCrewId(), proof.getDay(), proof.isPractice());
         boolean current = proof.getDay().equals(today()) && proof.isPractice() == race.get().isPractice();
-        boolean done = !doneBefore && progress(proof.getCrewId(), proof.getDay(), proof.isPractice()).done();
+        // one approved certificate is enough: rejecting an extra one in that category doesn't call the fan back
+        boolean settled = day.categories().stream()
+                .anyMatch(c -> c.id() == proof.getCategoryId() && c.state() == ProofState.APPROVED);
+        if (proof.getStatus() == ProofStatus.REJECTED && settled) {
+            current = false;
+        }
+        boolean done = !doneBefore && day.done();
         return new Decision(proof.getCrewId(), proof.getStatus(), category, proof.getReason(), proof.getId(), current, done,
                 proof.isPractice());
     }

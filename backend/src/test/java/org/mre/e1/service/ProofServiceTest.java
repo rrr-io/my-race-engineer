@@ -124,6 +124,21 @@ class ProofServiceTest {
     }
 
     @Test
+    void rejectingAnExtraCertificateInAnApprovedCategoryDoesNotCallTheFanBack() {
+        send(FANS_CHOICE, FANS_CHOICE);
+        service.approve(1);
+        ProofService.Decision decision = service.reject(2, "Not readable");
+        assertFalse(decision.current());
+        assertEquals(ProofState.APPROVED, stateOf(service.today(fan), FANS_CHOICE));
+    }
+
+    @Test
+    void aRejectionStillCallsTheFanBackWhenNothingIsApproved() {
+        send(FANS_CHOICE);
+        assertTrue(service.reject(1, "Not readable").current());
+    }
+
+    @Test
     void theDayIsAnnouncedAsDoneOnlyOnce() {
         send(FANS_CHOICE, SONG_OF_THE_YEAR);
         service.approve(1);
