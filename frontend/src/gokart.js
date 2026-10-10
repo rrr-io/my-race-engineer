@@ -1,10 +1,10 @@
 // Go Kart: a practice race the fan runs alone, on their phone. Nothing here talks to the server.
-import acorn from './assets/gokart/acorn.jpg'
+import acorn from './assets/gokart/acorn.png'
 import potato from './assets/gokart/potato.png'
 
 export const KARTS = {
-  acorn:  { slug: 'acorn',  name: 'Acorn',  number: '07', color: '#C8843E', bg: '#FBEDE6', img: acorn },
-  potato: { slug: 'potato', name: 'Potato', number: '22', color: '#F2B544', bg: '#FBE3EC', img: potato }
+  acorn:  { slug: 'acorn',  name: 'Acorn',  number: '07', color: '#C8843E', img: acorn },
+  potato: { slug: 'potato', name: 'Potato', number: '22', color: '#F2B544', img: potato }
 }
 
 export const rivalOf = (slug) => (slug === 'acorn' ? KARTS.potato : KARTS.acorn)

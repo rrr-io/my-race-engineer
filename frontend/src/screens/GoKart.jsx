@@ -40,9 +40,9 @@ export function Kart({ kart, width = 132 }) {
   )
 }
 
-const Avatar = ({ kart, size = 32, label }) => (
+const Avatar = ({ kart, size = 38, label }) => (
   <img className="gk-avatar" src={kart.img} alt={label ?? kart.name} width={size} height={size}
-       style={{ '--kart': kart.color, '--kart-bg': kart.bg, width: size, height: size }} />
+       style={{ width: size, height: size }} />
 )
 
 /** Step 1: Acorn or Potato. */
@@ -63,7 +63,7 @@ function PickKart({ onStart, onLeave }) {
             <button key={k.slug} type="button" role="radio" aria-checked={picked}
                     className={`gk-kart ${picked ? 'is-picked' : ''}`} style={{ '--kart': k.color }}
                     onClick={() => setPick(k.slug)}>
-              <Avatar kart={k} size={84} label="" />
+              <Avatar kart={k} size={96} label="" />
               <Kart kart={k} />
               <span className="gk-kart-name">{k.name.toUpperCase()}</span>
               <span className="gk-kart-tag">{picked ? 'PICKED' : 'RIVAL'} · NO. {k.number}</span>
@@ -168,7 +168,7 @@ function PracticePodium({ me, rival, team, onHome, onAgain }) {
       <div className="podium">
         <div className="podium-col is-p2" style={{ '--accent': rival.color, '--on-accent': '#0E0F12' }}>
           <div className="podium-team">
-            <Avatar kart={rival} size={52} />
+            <Avatar kart={rival} size={64} />
             <div className="podium-name">{rival.name.toUpperCase()}</div>
           </div>
           <div className="podium-step"><span>2</span></div>
@@ -176,7 +176,7 @@ function PracticePodium({ me, rival, team, onHome, onAgain }) {
         <div className="podium-col is-p1" style={{ '--accent': me.color, '--on-accent': '#0E0F12' }}>
           <div className="podium-team">
             <span className="podium-mine">YOU</span>
-            <Avatar kart={me} size={64} />
+            <Avatar kart={me} size={80} />
             <div className="podium-name">{me.name.toUpperCase()}</div>
           </div>
           <div className="podium-step"><span>1</span></div>

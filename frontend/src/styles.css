@@ -418,9 +418,10 @@ button.check-row .check-state::after { content: ' ›'; }
 .splash.is-neutral .splash-retry { --on-accent: #FFFFFF; }
 
 /* Go Kart: the practice race */
+/* Acorn and Potato as die-cut stickers: the white cut-out border is in the image, the shadow lifts it off the dark */
 .gk-avatar {
-  display: block; flex-shrink: 0; border-radius: 50%; object-fit: cover;
-  border: 2px solid var(--kart); background: var(--kart-bg, #FBEDE6);
+  display: block; flex-shrink: 0; object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
 }
 .gk-pick { padding: 28px 20px 24px; gap: 20px; }
 .gk-pick-head h1 { margin: 6px 0 8px; font-size: 32px; line-height: 1.1; font-weight: 900; }
@@ -431,7 +432,6 @@ button.check-row .check-state::after { content: ' ›'; }
   background: var(--surface); color: var(--text); border: 2px solid var(--line); border-radius: 10px; cursor: pointer; font: inherit;
 }
 .gk-kart.is-picked { border-color: var(--kart); }
-.gk-kart .gk-avatar { border-width: 3px; }
 .gk-kart svg { max-width: 100%; height: auto; }
 .gk-kart-name { font-size: 18px; font-weight: 900; }
 .gk-kart-tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); }
@@ -467,10 +467,10 @@ button.check-row .check-state::after { content: ' ›'; }
   background: repeating-conic-gradient(#F4F5F7 0 25%, #0E0F12 0 50%) 0 0 / 14px 14px;
 }
 .gk-runner {
-  position: absolute; left: calc(10px + (100% - 66px) * var(--p) / 100); transition: left 1.2s ease-out;
+  position: absolute; left: calc(8px + (100% - 68px) * var(--p) / 100); transition: left 1.2s ease-out;
 }
-.gk-runner.is-me { top: 4px; }
-.gk-runner.is-rival { top: 46px; }
+.gk-runner.is-me { top: 2px; }
+.gk-runner.is-rival { top: 44px; }
 .gk-track.is-paused .gk-runner { filter: saturate(0.4); }
 .gk-lights { position: relative; }
 .gk-lights .start-light { --lit: var(--accent); }
@@ -481,7 +481,8 @@ button.check-row .check-state::after { content: ' ›'; }
 .feed > p { margin: 0; }
 
 .gk-podium .podium-team { gap: 6px; }
-.gk-podium .is-p1 .gk-avatar { box-shadow: 0 0 0 0 var(--accent); animation: p1-glow 1.6s ease-in-out 2.2s infinite; }
+.gk-podium .is-p1 .gk-avatar { animation: sticker-glow 1.6s ease-in-out 2.2s infinite; }
+@keyframes sticker-glow { 50% { filter: drop-shadow(0 0 14px var(--accent)); } }
 .gk-podium-radio { width: 100%; max-width: 420px; opacity: 0; animation: fade-up 0.4s ease-out 2.2s forwards; }
 .gk-podium-actions { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 8px; opacity: 0; animation: fade-up 0.4s ease-out 2.4s forwards; }
 @media (prefers-reduced-motion: reduce) { .gk-podium-radio, .gk-podium-actions { opacity: 1; } }

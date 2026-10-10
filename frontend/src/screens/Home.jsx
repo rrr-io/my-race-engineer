@@ -155,8 +155,7 @@ function GoKartCard({ onStart }) {
         <div className="eyebrow">GO KART · PRACTICE</div>
         <span className="gk-card-faces" aria-hidden="true">
           {Object.values(KARTS).map((k) => (
-            <img key={k.slug} className="gk-avatar" src={k.img} alt="" width="32" height="32"
-                 style={{ '--kart': k.color, '--kart-bg': k.bg }} />
+            <img key={k.slug} className="gk-avatar" src={k.img} alt="" width="40" height="40" />
           ))}
         </span>
       </div>
