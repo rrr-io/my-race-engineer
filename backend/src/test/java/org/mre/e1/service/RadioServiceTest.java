@@ -24,7 +24,7 @@ class RadioServiceTest {
 
     private static ProofView day(ProofView.CategoryProgress... rows) {
         boolean done = rows.length > 0 && List.of(rows).stream().allMatch(r -> r.state() == ProofState.APPROVED);
-        return new ProofView(DAY, done, !done, List.of(rows), 10, 5, null, null);
+        return new ProofView(DAY, done, !done, List.of(rows), 10, null, null);
     }
 
     private static ProofView.CategoryProgress row(long id, String name, ProofState state) {

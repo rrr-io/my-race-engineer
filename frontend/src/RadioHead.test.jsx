@@ -27,6 +27,6 @@ describe('RadioHead', () => {
     rerender(<RadioHead from="PADDOCK" kind="CHANT" />)
     expect(screen.getByText('RADIO · FANCHANT')).toBeTruthy()
     rerender(<RadioHead from="PADDOCK" kind="MESSAGE" />)
-    expect(screen.getByText('RADIO · ENGINEER')).toBeTruthy()
+    expect(screen.getByText('RADIO · ENGENEer')).toBeTruthy()
   })
 })

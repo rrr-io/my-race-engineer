@@ -7,9 +7,9 @@ import { useNow } from './useNow.js'
 const TAGS = { MISSING: 'TO DO', PENDING: 'UNDER REVIEW', APPROVED: 'APPROVED', REJECTED: 'TO REDO' }
 
 const messageFor = (err) => {
-  if (err.status === 400) return "That wasn't accepted: use JPEG, PNG or WebP screenshots, and only categories on the list."
-  if (err.status === 413) return 'A screenshot is too large. Try a smaller one.'
-  if (err.status === 409) return "Part of that was refused: a category is already approved or at today's limit."
+  if (err.status === 400) return "That wasn't accepted: use JPEG, PNG or WebP certificates, and only categories on the list."
+  if (err.status === 413) return 'Your proof is too large. Try a smaller one.'
+  if (err.status === 409) return 'Uploads are closed right now. Wait for the next race phase.'
   if (err.status === 404) return 'We lost your team. Reload the app.'
   return "Couldn't send your proof. Check your connection and try again."
 }
@@ -26,19 +26,16 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false,
   useEffect(() => () => Object.values(latest.current).flat().forEach((p) => URL.revokeObjectURL(p.url)), [])
 
   if (!proof) return null
-  const { categories, done, maxPerSubmission, maxPerCategory } = proof
+  // no limit on proofs: every certificate counts for the team. They go up a few at a time (maxPerSubmission).
+  const { categories, done, maxPerSubmission } = proof
   const total = Object.values(picked).flat().length
 
   const onPick = (category, e) => {
     const files = Array.from(e.target.files || [])
     e.target.value = ''
     if (!files.length) return
-    const mine = picked[category.id] ?? []
-    const room = Math.max(Math.min(maxPerCategory - category.count - mine.length, maxPerSubmission - total), 0)
-    const added = files.slice(0, room).map((file) => ({ file, url: URL.createObjectURL(file) }))
-    setError(files.length > room
-      ? (room ? `You can add up to ${room} more here.` : 'No more screenshots can be added here right now.')
-      : null)
+    const added = files.map((file) => ({ file, url: URL.createObjectURL(file) }))
+    setError(null)
     setPicked((current) => ({ ...current, [category.id]: [...(current[category.id] ?? []), ...added] }))
   }
 
@@ -50,17 +47,23 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false,
 
   const send = async () => {
     setBusy(true); setError(null)
+    const items = categories.flatMap((c) => (picked[c.id] ?? []).map((p) => ({ categoryId: c.id, picked: p })))
+    const size = Math.max(1, maxPerSubmission || 10)
+    const sent = new Set()
     try {
-      const items = categories.flatMap((c) => (picked[c.id] ?? []).map((p) => ({ categoryId: c.id, file: p.file })))
-      const prepared = await Promise.all(items.map(async (item) => ({ ...item, file: await prepareImage(item.file) })))
-      await submitProof(crewId, prepared)
-      Object.values(picked).flat().forEach((p) => URL.revokeObjectURL(p.url))
-      setPicked({})
-      onChanged()
+      for (let i = 0; i < items.length; i += size) {
+        const batch = items.slice(i, i + size)
+        const prepared = await Promise.all(batch.map(async (item) => ({ categoryId: item.categoryId, file: await prepareImage(item.picked.file) })))
+        await submitProof(crewId, prepared)
+        batch.forEach((item) => sent.add(item.picked))
+      }
     } catch (err) {
       setError(messageFor(err))
-      if (err.status === 409) onChanged()
     } finally {
+      // what went up leaves the card; anything that failed stays, ready to send again
+      sent.forEach((p) => URL.revokeObjectURL(p.url))
+      setPicked((current) => Object.fromEntries(Object.entries(current).map(([id, list]) => [id, list.filter((p) => !sent.has(p))])))
+      if (sent.size) onChanged()
       setBusy(false)
     }
   }
@@ -79,11 +82,14 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false,
         <p className="muted small">
           {practice
             ? "Send a certificate from an old vote for every category. Race Control checks it for real, but it doesn't count for the race."
-            : 'Vote on MNET+, then send at least one screenshot for every category.'}
+            : 'Vote on MNET+, then send certificates for every category.'}
         </p>
       )}
       {done && (
-        <p className="muted small">{practice ? "Practice done! That's exactly how race day works." : "You're done for today. See you at the next lap."}</p>
+        <p className="muted small">
+          {practice ? "Practice done! That's exactly how race day works." : "You're done for today. See you at the next lap."}
+          {!practice && ' Extra certificates still count for your team.'}
+        </p>
       )}
 
       {categories.map((c) => {
@@ -100,35 +106,28 @@ export default function ProofCard({ crewId, proof, onChanged, highlight = false,
               <div className="thumbs">
                 {mine.map((p, i) => (
                   <div className="thumb" key={p.url}>
-                    <img src={p.url} alt={`${c.name} screenshot ${i + 1}`} />
-                    <button type="button" className="thumb-remove" aria-label={`Remove ${c.name} screenshot ${i + 1}`}
+                    <img src={p.url} alt={`${c.name} certificate ${i + 1}`} />
+                    <button type="button" className="thumb-remove" aria-label={`Remove ${c.name} certificate ${i + 1}`}
                             onClick={() => remove(c.id, i)}>×</button>
                   </div>
                 ))}
               </div>
             )}
-            {c.state !== 'APPROVED' && (
-              <>
-                <input id={`proof-file-${c.id}`} type="file" accept="image/*" multiple hidden
-                       onChange={(e) => onPick(c, e)} />
-                <button type="button" className="btn-secondary" disabled={busy || c.count + mine.length >= maxPerCategory}
-                        onClick={() => document.getElementById(`proof-file-${c.id}`).click()}>
-                  {mine.length || c.count ? 'Add another screenshot' : 'Choose screenshots'}
-                </button>
-                <p className="muted small">{c.count + mine.length} of {maxPerCategory} screenshots today</p>
-              </>
-            )}
+            <input id={`proof-file-${c.id}`} type="file" accept="image/*" multiple hidden
+                   onChange={(e) => onPick(c, e)} />
+            <button type="button" className="btn-secondary" disabled={busy}
+                    onClick={() => document.getElementById(`proof-file-${c.id}`).click()}>
+              {mine.length || c.count ? 'Add another certificate' : 'Choose certificates'}
+            </button>
+            {c.count > 0 && <p className="muted small">{c.count} {c.count === 1 ? 'certificate' : 'certificates'} sent today</p>}
           </div>
         )
       })}
 
-      {categories.length > 0 && !done && (
+      {categories.length > 0 && (!done || total > 0) && (
         <button type="button" className="btn-primary" disabled={!total || busy} onClick={send}>
           {busy ? 'Sending…' : total ? `Send proof (${total})` : 'Send proof'}
         </button>
-      )}
-      {categories.length > 0 && !done && total > 0 && (
-        <p className="muted small">Up to {maxPerSubmission} screenshots per send.</p>
       )}
       {error && <p className="error" role="alert">{error}</p>}
     </section>

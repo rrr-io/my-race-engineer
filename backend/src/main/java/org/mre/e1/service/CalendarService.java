@@ -54,14 +54,14 @@ public class CalendarService {
         Ics.line(out, "CALSCALE:GREGORIAN");
         Ics.line(out, "METHOD:PUBLISH");
         Ics.line(out, "X-WR-CALNAME:" + Ics.text(name));
-        Ics.line(out, "X-WR-CALDESC:" + Ics.text("Voting dates for ENHYPEN at MAMA, from your race engineer."));
+        Ics.line(out, "X-WR-CALDESC:" + Ics.text("Voting dates for ENHYPEN at MAMA, from your race ENGENEer."));
         Ics.line(out, "REFRESH-INTERVAL;VALUE=DURATION:PT1H");
         Ics.line(out, "X-PUBLISHED-TTL:PT1H");
 
         for (RaceEvent e : events) {
             String description = e.getNote().isEmpty()
-                    ? "Open your race engineer: " + appUrl
-                    : e.getNote() + "\n\nOpen your race engineer: " + appUrl;
+                    ? "Open your race ENGENEer: " + appUrl
+                    : e.getNote() + "\n\nOpen your race ENGENEer: " + appUrl;
             Ics.line(out, "BEGIN:VEVENT");
             Ics.line(out, "UID:race-event-" + e.getId() + "@" + uidDomain);
             Ics.line(out, "DTSTAMP:" + stamp);

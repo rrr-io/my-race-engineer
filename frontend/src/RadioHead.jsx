@@ -24,7 +24,7 @@ export function ago(iso, now = Date.now()) {
 export default function RadioHead({ from = 'ENGINEER', kind = null, fresh = false, at = null, now }) {
   const when = at ? ago(at, now) : null
   const control = from === 'RACE_CONTROL'
-  const label = control ? 'RADIO · RACE CONTROL' : kind === 'CHANT' ? 'RADIO · FANCHANT' : 'RADIO · ENGINEER'
+  const label = control ? 'RADIO · RACE CONTROL' : kind === 'CHANT' ? 'RADIO · FANCHANT' : 'RADIO · ENGENEer'
   return (
     <div className="radio-head">
       <div className={`radio-label ${control ? 'is-control' : ''}`}>

@@ -55,7 +55,7 @@ export default function App() {
   if (status === 'onboarding') screen = <Onboarding onJoin={join} />
   else if (status === 'radio') screen = <RadioCheck team={teamBySlug(crew.team)} crewId={crew.id} onDone={radioDone} />
   else if (status === 'ready' && practice) screen = <GoKart team={teamBySlug(crew.team)} onLeave={endPractice} />
-  else if (status === 'ready') screen = <Home team={teamBySlug(crew.team)} crewId={crew.id} onReady={homeLoaded} onPractice={startPractice} />
+  else if (status === 'ready') screen = <Home team={teamBySlug(crew.team)} crewId={crew.id} onReady={homeLoaded} onPractice={startPractice} tourReady={!splash} />
 
   // same position in the tree whatever the screen, so the splash keeps its lights while the home mounts below it
   return (

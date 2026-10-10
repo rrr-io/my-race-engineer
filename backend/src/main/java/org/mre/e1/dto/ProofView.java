@@ -10,7 +10,7 @@ import java.util.List;
  * upload or review of the day (null when nothing was sent).
  */
 public record ProofView(LocalDate day, boolean done, boolean needsAction, List<CategoryProgress> categories,
-                        int maxPerSubmission, int maxPerCategory, Long latestProofId,
+                        int maxPerSubmission, Long latestProofId,
                         Instant lastActivityAt) {
 
     public record CategoryProgress(long id, String name, ProofState state, String reason, int count) {}

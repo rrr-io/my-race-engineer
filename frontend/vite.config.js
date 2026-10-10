@@ -15,7 +15,7 @@ export default defineConfig({
       manifest: {
         name: 'RACE ENGENEer',
         short_name: 'RACE ENGENEer',
-        description: 'Your personal race engineer for ENHYPEN MAMA voting',
+        description: 'Your personal race ENGENEer for ENHYPEN MAMA voting',
         theme_color: '#0E0F12',
         background_color: '#0E0F12',
         display: 'standalone',

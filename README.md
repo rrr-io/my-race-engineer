@@ -15,7 +15,7 @@ cd frontend && npm install && npm run dev     # :5173, proxies /api
 `backend/src/main/java/org/mre/e1`, one package per layer:
 
 - `controller`: the REST endpoints (their request and response records are nested in the controller)
-- `service`: business logic, push, proofs, reminders, radio messages and the screenshot storage
+- `service`: business logic, push, proofs, reminders, radio messages and the certificate storage
 - `repository`: Spring Data repositories
 - `model`: JPA entities and the enums they use
 - `dto`: types shared between services and the API (`ProofView`)
@@ -54,13 +54,13 @@ The Go Kart race in the app is something else: a practice race each fan runs alo
 
 ## Proofs
 
-Race Control sets the voting categories from `/admin` (one per line; change them at each stage). Every day (Korean time, KST) a fan sends any number of screenshots, each for one category, and needs at least one approved per category to be done. Before that the engineer briefs them on MNET+ and the categories still to do. Each screenshot is reviewed on its own in `/admin` (Under review): approved, or rejected with a reason and sent again. The fan gets a push when a screenshot is rejected and when the whole day is approved.
+Race Control sets the voting categories from `/admin` (one per line; change them at each stage). Every day (Korean time, KST) a fan sends any number of voting certificates saved from MNET Plus, each for one category, and needs at least one approved per category to be done. There is no limit: every certificate counts for the team's podium, also after a category is approved. Before that the ENGENEer briefs them on MNET+ and the categories still to do. Each certificate is reviewed on its own in `/admin` (Under review): approved, or rejected with a reason and sent again. The fan gets a push when a certificate is rejected and when the whole day is approved.
 
-Limits: `PROOFS_MAX_PER_SUBMISSION` (default 10) and `PROOFS_MAX_PER_CATEGORY` per day (default 5). Screenshots are stored on disk in `PROOFS_DIR` (a Docker volume in production) and are only served to the admin.
+`PROOFS_MAX_PER_SUBMISSION` (default 10) is only how many files travel in one request: the app sends the rest in further requests. Certificates are stored on disk in `PROOFS_DIR` (a Docker volume in production) and are only served to the admin.
 
 ## Buttons and what's new
 
-The engineer's voting message has two buttons: "Open MNET+" (the link Race Control sets in `/admin`, https only, `https://mnetplus.world/` by default) and "Upload proof" (scrolls to the proof card). Reminder and rejection notifications carry the same buttons where the device shows them (Android and desktop; iPhone ignores notification buttons, and tapping the notification opens the proof card). The newest message the fan has not seen glows with a NEW tag until they tap it or leave the app.
+The ENGENEer's voting message has two buttons: "Open MNET+" (the link Race Control sets in `/admin`, https only, `https://mnetplus.world/` by default) and "Upload proof" (scrolls to the proof card). Reminder and rejection notifications carry the same buttons where the device shows them (Android and desktop; iPhone ignores notification buttons, and tapping the notification opens the proof card). The newest message the fan has not seen glows with a NEW tag until they tap it or leave the app.
 
 While a pit stop is on, the stage is frozen: the phase and free practice cannot be changed until it ends.
 

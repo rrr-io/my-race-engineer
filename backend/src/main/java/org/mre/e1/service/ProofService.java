@@ -26,7 +26,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +46,8 @@ public class ProofService {
 
     /**
      * The outcome of a review. {@code current} = it concerns what the fan is doing now (today, and the same session:
-     * free practice or race); {@code done} = that day is now complete; {@code practice} = a free practice proof.
+     * free practice or race); {@code done} = this approval completed the day (only once, even if more certificates
+     * are approved later); {@code practice} = a free practice proof.
      */
     public record Decision(UUID crewId, ProofStatus status, String category, String reason, long proofId,
                            boolean current, boolean done, boolean practice) {}
@@ -63,13 +63,11 @@ public class ProofService {
     private final CategoryService categories;
     private final Clock clock;
     private final int maxPerSubmission;
-    private final int maxPerCategory;
     private final int maxImageBytes;
 
     public ProofService(ProofRepository proofs, ProofStorage storage, RaceService race, CrewMemberRepository crew,
                         CategoryService categories, Clock clock,
                         @Value("${proofs.max-per-submission}") int maxPerSubmission,
-                        @Value("${proofs.max-per-category}") int maxPerCategory,
                         @Value("${proofs.max-image-bytes}") int maxImageBytes) {
         this.proofs = proofs;
         this.storage = storage;
@@ -78,7 +76,6 @@ public class ProofService {
         this.categories = categories;
         this.clock = clock;
         this.maxPerSubmission = maxPerSubmission;
-        this.maxPerCategory = maxPerCategory;
         this.maxImageBytes = maxImageBytes;
     }
 
@@ -89,14 +86,14 @@ public class ProofService {
     }
 
     /**
-     * Any number of screenshots, each tagged with its category. A category that is already approved is closed;
-     * the others accept more until the daily cap per category.
+     * Certificates, each tagged with its category. There is no limit: every proof counts for the team, also after a
+     * category is approved. One request carries at most maxPerSubmission files; the app sends more in several requests.
      */
     @Transactional
     public ProofView submit(UUID crewId, List<byte[]> files, List<Long> categoryIds) {
         if (files.isEmpty() || files.size() != categoryIds.size() || files.size() > maxPerSubmission) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Send between 1 and " + maxPerSubmission + " screenshots, each with its category");
+                    "Send between 1 and " + maxPerSubmission + " certificates per request, each with its category");
         }
         Map<Long, Category> active = categories.active().stream()
                 .collect(Collectors.toMap(Category::getId, Function.identity()));
@@ -106,7 +103,7 @@ public class ProofService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown category");
             }
             if (files.get(i).length > maxImageBytes) {
-                throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Screenshot too large");
+                throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Certificate too large");
             }
             types.add(ImageType.detect(files.get(i)).orElseThrow(() ->
                     new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG and WebP images are accepted")));
@@ -117,19 +114,6 @@ public class ProofService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Uploads are closed right now");
         }
         LocalDate day = today();
-        Map<Long, ProofView.CategoryProgress> state = progress(crewId, day, raceState.isPractice()).categories().stream()
-                .collect(Collectors.toMap(ProofView.CategoryProgress::id, Function.identity()));
-        Map<Long, Integer> adding = new HashMap<>();
-        categoryIds.forEach(id -> adding.merge(id, 1, Integer::sum));
-        for (Map.Entry<Long, Integer> entry : adding.entrySet()) {
-            ProofView.CategoryProgress category = state.get(entry.getKey());
-            if (category.state() == ProofState.APPROVED) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, category.name() + " is already approved");
-            }
-            if (category.count() + entry.getValue() > maxPerCategory) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Too many screenshots for " + category.name() + " today");
-            }
-        }
 
         List<String> stored = new ArrayList<>();
         try {
@@ -144,7 +128,7 @@ public class ProofService {
             return progress(crewId, day, raceState.isPractice());
         } catch (IOException e) {
             stored.forEach(storage::deleteQuietly);
-            throw new IllegalStateException("Could not store the screenshots", e);
+            throw new IllegalStateException("Could not store the certificates", e);
         } catch (RuntimeException e) {
             stored.forEach(storage::deleteQuietly);
             throw e;
@@ -187,8 +171,9 @@ public class ProofService {
     @Transactional
     public Decision approve(long proofId) {
         Proof proof = pendingOrThrow(proofId);
+        boolean doneBefore = progress(proof.getCrewId(), proof.getDay(), proof.isPractice()).done();
         proof.approve(clock.instant());
-        return decision(proof);
+        return decision(proof, doneBefore);
     }
 
     @Transactional
@@ -199,13 +184,14 @@ public class ProofService {
         }
         Proof proof = pendingOrThrow(proofId);
         proof.reject(clean, clock.instant());
-        return decision(proof);
+        return decision(proof, true);
     }
 
-    private Decision decision(Proof proof) {
+    /** doneBefore: the day was already complete, so an extra certificate approved now doesn't announce it again. */
+    private Decision decision(Proof proof, boolean doneBefore) {
         String category = categories.find(proof.getCategoryId()).map(Category::getName).orElse("category");
         boolean current = proof.getDay().equals(today()) && proof.isPractice() == race.get().isPractice();
-        boolean done = progress(proof.getCrewId(), proof.getDay(), proof.isPractice()).done();
+        boolean done = !doneBefore && progress(proof.getCrewId(), proof.getDay(), proof.isPractice()).done();
         return new Decision(proof.getCrewId(), proof.getStatus(), category, proof.getReason(), proof.getId(), current, done,
                 proof.isPractice());
     }
@@ -234,7 +220,7 @@ public class ProofService {
         Long latest = ofTheDay.stream().map(Proof::getId).max(Long::compare).orElse(null);
         Instant lastActivity = ofTheDay.stream().map(Proof::getLastActivityAt).filter(java.util.Objects::nonNull)
                 .max(Instant::compareTo).orElse(null);
-        return new ProofView(day, done, needsAction, rows, maxPerSubmission, maxPerCategory, latest, lastActivity);
+        return new ProofView(day, done, needsAction, rows, maxPerSubmission, latest, lastActivity);
     }
 
     private static ProofState stateOf(List<Proof> mine) {

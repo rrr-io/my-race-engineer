@@ -12,6 +12,7 @@ import { teamStyle } from '../teams.js'
 import { useNow } from '../useNow.js'
 import { PodiumCard, PodiumCeremony, useCeremony } from '../Podium.jsx'
 import { KARTS, practiceDone } from '../gokart.js'
+import FormationLap, { formationLapDone } from '../FormationLap.jsx'
 
 const GLOW_MS = 8000
 
@@ -19,7 +20,7 @@ const GLOW_MS = 8000
 // opens the proof card too, for certificates from an old vote that Race Control reviews but never counts.
 const ACTION_PHASES = ['SPRINT_RACE', 'GRAND_PRIX', 'FINAL_LAP']
 
-export default function Home({ team, crewId, onReady, onPractice }) {
+export default function Home({ team, crewId, onReady, onPractice, tourReady = true }) {
   const { radio, offline, reload } = useRadio(crewId)
   useEffect(() => { if (radio || offline) onReady?.() }, [radio, offline, onReady])
   const practice = !!radio?.practice
@@ -38,6 +39,10 @@ export default function Home({ team, crewId, onReady, onPractice }) {
   const podium = radio?.phase === 'FINISH_LINE' ? (radio.podium ?? []) : []
   const ceremony = useCeremony(crewId, podium)
   const [highlight, setHighlight] = useState(false)
+  // the Formation Lap: once, the first time the home is ready (after the splash, never over the podium ceremony)
+  const [tour, setTour] = useState(() => !formationLapDone())
+  const showTour = tour && tourReady && !!radio && !ceremony.open
+  const endTour = useCallback(() => setTour(false), [])
   const timer = useRef(null)
   const handledLink = useRef(false)
 
@@ -69,7 +74,7 @@ export default function Home({ team, crewId, onReady, onPractice }) {
 
   return (
     <div className={`screen home ${racing ? 'has-dock' : ''}`} style={teamStyle(team)}>
-      <RaceHeader team={team} radio={radio} />
+      <RaceHeader team={team} radio={radio} onTour={() => setTour(true)} />
 
       {offline && (
         <div className="offline-row" role="status">
@@ -80,7 +85,7 @@ export default function Home({ team, crewId, onReady, onPractice }) {
       <RaceWeekendBand team={team} />
 
       <main className="feed">
-        <article className="radio">
+        <article className="radio" data-tour="radio">
           <RadioHead />
           <div className="radio-body"><p className="radio-text">"{team.welcome}"</p></div>
         </article>
@@ -130,6 +135,8 @@ export default function Home({ team, crewId, onReady, onPractice }) {
       )}
 
       {ceremony.open && <PodiumCeremony podium={podium} myTeam={team.slug} onClose={ceremony.close} />}
+
+      {showTour && <FormationLap team={team} onPractice={onPractice} onClose={endTour} />}
     </div>
   )
 }
@@ -163,7 +170,7 @@ function useBoardGlow(crewId, board) {
 function GoKartCard({ onStart }) {
   const [again] = useState(practiceDone)
   return (
-    <section className="card gk-card" aria-labelledby="gk-card-title">
+    <section className="card gk-card" aria-labelledby="gk-card-title" data-tour="gokart">
       <div className="proof-title">
         <div className="eyebrow">GO KART · PRACTICE</div>
         <span className="gk-card-faces" aria-hidden="true">

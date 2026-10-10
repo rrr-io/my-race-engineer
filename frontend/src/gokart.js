@@ -11,7 +11,6 @@ export const rivalOf = (slug) => (slug === 'acorn' ? KARTS.potato : KARTS.acorn)
 
 export const CATEGORY = "Fans' Choice"
 export const REJECT_REASON = 'Not readable'
-export const MAX_SHOTS = 5
 const MIN_SIDE = 300
 
 const DONE_KEY = 'e1.gokart.done'

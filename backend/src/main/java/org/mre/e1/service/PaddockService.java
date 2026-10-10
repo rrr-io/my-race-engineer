@@ -84,7 +84,7 @@ public class PaddockService {
         PaddockMessage saved = messages.save(new PaddockMessage(team, kind, body, clock.instant()));
         // it reaches the fan through their engineer, like every other radio call
         String name = "Team " + CalendarService.NAMES.get(team);
-        notifier.paddock(team, kind == Kind.CHANT ? "Race Engineer · " + name + " fanchant" : "Race Engineer", body);
+        notifier.paddock(team, kind == Kind.CHANT ? "Race ENGENEer · " + name + " fanchant" : "Race ENGENEer", body);
         return saved;
     }
 

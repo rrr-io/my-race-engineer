@@ -6,7 +6,7 @@ export function onPush(event, registration) {
     data = { body: event.data ? event.data.text() : '' }
   }
   event.waitUntil(
-    registration.showNotification(data.title || 'Race Engineer', {
+    registration.showNotification(data.title || 'Race ENGENEer', {
       body: data.body || '',
       tag: data.tag,
       icon: '/icons/icon-192-v2.png',

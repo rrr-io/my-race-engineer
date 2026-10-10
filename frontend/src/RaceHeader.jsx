@@ -21,8 +21,8 @@ function raceStatus(radio) {
   return { kind: 'waiting', label: 'WAITING FOR LIGHTS OUT' }
 }
 
-/** App bar, livery stripe, team and race status. */
-export default function RaceHeader({ team, radio }) {
+/** App bar, livery stripe, team and race status. onTour replays the Formation Lap. */
+export default function RaceHeader({ team, radio, onTour }) {
   const status = radio ? raceStatus(radio) : null
   return (
     <header className="race-head">
@@ -32,6 +32,9 @@ export default function RaceHeader({ team, radio }) {
           <div className="app-name">RACE ENGENEer</div>
           <div className="app-sub">PERSONAL PIT WALL</div>
         </div>
+        {onTour && (
+          <button type="button" className="tour-btn" onClick={onTour} aria-label="Formation lap: a quick tour of the app">?</button>
+        )}
       </div>
       <div className="livery-stripe" aria-hidden="true"><span /><span /></div>
       <div className="team-row">
@@ -42,7 +45,7 @@ export default function RaceHeader({ team, radio }) {
         </div>
       </div>
       {status && (
-        <div className="race-status">
+        <div className="race-status" data-tour="status">
           <span>{phaseInfo(radio.phase).label.toUpperCase()}</span>
           <span className={`status is-${status.kind}`}><span className="status-mark" aria-hidden="true" />{status.label}</span>
         </div>

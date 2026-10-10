@@ -46,7 +46,7 @@ export default function RaceWeekendBand({ team }) {
   }
 
   return (
-    <div className={`rw-band ${open ? 'is-open' : ''}`}>
+    <div className={`rw-band ${open ? 'is-open' : ''}`} data-tour="calendar">
       <button type="button" className="rw-bar" aria-expanded={open} aria-controls="rw-panel" onClick={() => setOpen(!open)}>
         <span className="rw-icon"><CalendarIcon /></span>
         <span className="rw-text">

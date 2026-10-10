@@ -12,7 +12,7 @@ function ConfirmCard({ confirm, busy, onYes, onNo }) {
   let reach = null
   if (preview && lines.length > 0) {
     reach = preview.pushEnabled
-      ? `${devicesText(preview.devices)} get this radio call now${preview.from === 'ENGINEER' ? ", each in their engineer's voice" : ''}:`
+      ? `${devicesText(preview.devices)} get this radio call now${preview.from === 'ENGINEER' ? ", each in their ENGENEer's voice" : ''}:`
       : 'Push is off: fans see this in the app only.'
   } else if (preview) {
     reach = 'No radio call goes out for this. Fans see the change in the app.'

@@ -20,7 +20,6 @@ server:
 proofs:
   dir: ${PROOFS_DIR:./data/proofs}
   max-per-submission: ${PROOFS_MAX_PER_SUBMISSION:10}
-  max-per-category: ${PROOFS_MAX_PER_CATEGORY:5}
   max-image-bytes: 8388608
 
 reminders:

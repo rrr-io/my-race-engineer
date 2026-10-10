@@ -29,7 +29,7 @@ public class PushNotifier {
 
     private static final Logger log = LoggerFactory.getLogger(PushNotifier.class);
     private static final int TTL_SECONDS = 3600;
-    private static final String PRACTICE_TITLE = "Race Engineer · Free Practice";
+    private static final String PRACTICE_TITLE = "Race ENGENEer · Free Practice";
 
     public record Action(String action, String title) {}
 
@@ -169,7 +169,7 @@ public class PushNotifier {
 
     /** Tells one fan how Race Control judged their proof, in their engineer's voice; a free practice proof says so. */
     public void proofDecided(UUID crewId, ProofStatus status, String reason, long proofId, boolean practice) {
-        String title = practice ? PRACTICE_TITLE : "Race Engineer";
+        String title = practice ? PRACTICE_TITLE : "Race ENGENEer";
         if (sender == null) {
             return;
         }
@@ -208,7 +208,7 @@ public class PushNotifier {
                     .stream()
                     .collect(Collectors.toMap(CrewMember::getId, CrewMember::getTeam));
             Map<Team, Optional<String>> texts = new EnumMap<>(Team.class);
-            String title = "Race Engineer";
+            String title = "Race ENGENEer";
 
             for (PushSubscription subscription : all) {
                 Team team = teamByCrew.get(subscription.getCrewId());

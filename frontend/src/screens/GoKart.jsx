@@ -3,7 +3,7 @@ import RadioHead from '../RadioHead.jsx'
 import TodayChecklist from '../TodayChecklist.jsx'
 import { phaseInfo } from '../phases.js'
 import { teamStyle } from '../teams.js'
-import { CATEGORY, KARTS, MAX_SHOTS, REJECT_REASON, checkCertificate, rememberPractice, rivalOf } from '../gokart.js'
+import { CATEGORY, KARTS, REJECT_REASON, checkCertificate, rememberPractice, rivalOf } from '../gokart.js'
 
 // Only the start lights and Race Control's review run on a timer. Every phase change waits for the fan's tap,
 // so there's always time to read the radio.
@@ -136,11 +136,11 @@ function PracticeProof({ state, shots, busy, error, onPick, onRemove, onSend, hi
         {open && (
           <>
             <input id="gk-file" type="file" accept="image/*" multiple hidden onChange={onPick} />
-            <button type="button" className="btn-secondary" disabled={busy || shots.length >= MAX_SHOTS}
+            <button type="button" className="btn-secondary" disabled={busy}
                     onClick={() => document.getElementById('gk-file').click()}>
               {shots.length ? 'Add another certificate' : 'Choose a certificate'}
             </button>
-            <p className="muted small">{shots.length} of {MAX_SHOTS} certificates</p>
+            {shots.length > 0 && <p className="muted small">{shots.length} {shots.length === 1 ? 'certificate' : 'certificates'}</p>}
           </>
         )}
       </div>
@@ -286,10 +286,9 @@ function Race({ team, onLeave, onAgain }) {
     e.target.value = ''
     if (!files.length) return
     setBusy(true); setError(null)
-    const room = MAX_SHOTS - shots.length
     const added = []
-    let problem = files.length > room ? `You can add up to ${room} more here.` : null
-    for (const file of files.slice(0, room)) {
+    let problem = null
+    for (const file of files) {
       const wrong = await checkCertificate(file)
       if (wrong) { problem = wrong; continue }
       const url = URL.createObjectURL(file)
@@ -436,12 +435,12 @@ function Race({ team, onLeave, onAgain }) {
 
         {stage === 'grid' && (
           <>
-            <p className="muted small">On race day Race Control starts the race for everyone. In practice, you do.</p>
+            <p className="muted small">On race day Race Control starts the race for everyone. In practice, you control it.</p>
             <button type="button" className="btn-primary gk-go" onClick={lightsOut}>Lights out</button>
           </>
         )}
 
-        {pit && <p className="muted small">On race day a pit stop freezes the stage until Race Control resumes it. In practice, you do.</p>}
+        {pit && <p className="muted small">On race day a pit stop freezes the stage until Race Control resumes it. In practice, you control it.</p>}
 
         {phase === 'GRAND_PRIX' && !pit && proofOpen && proof === 'MISSING' && (
           <p className="muted small">Grand Prix and Final Lap replay the same loop faster: briefing, a tap on the saved certificate, approval.</p>

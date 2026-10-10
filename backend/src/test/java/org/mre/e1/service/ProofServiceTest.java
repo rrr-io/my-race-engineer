@@ -28,7 +28,7 @@ class ProofServiceTest {
 
     private static final long FANS_CHOICE = 1;
     private static final long SONG_OF_THE_YEAR = 2;
-    private static final int MAX_PER_CATEGORY = 2;
+    private static final int PER_REQUEST = 3;
     // 21:00 in Korea: still 10 October there
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC);
     private static final LocalDate TODAY_KST = LocalDate.of(2026, 10, 10);
@@ -48,7 +48,7 @@ class ProofServiceTest {
                 TestData.category(FANS_CHOICE, "Fans' Choice"),
                 TestData.category(SONG_OF_THE_YEAR, "Song of the Year"))), CLOCK);
         ProofStorage storage = new ProofStorage(Files.createTempDirectory("proofs").toString());
-        service = new ProofService(proofs.repository, storage, race, null, categories, CLOCK, 10, MAX_PER_CATEGORY, 1_000_000);
+        service = new ProofService(proofs.repository, storage, race, null, categories, CLOCK, PER_REQUEST, 1_000_000);
     }
 
     private ProofView send(long... categoryIds) {
@@ -102,17 +102,34 @@ class ProofServiceTest {
     }
 
     @Test
-    void anApprovedCategoryIsClosed() {
+    void anApprovedCategoryStillTakesMoreCertificates() {
         send(FANS_CHOICE);
         service.approve(1);
-        assertEquals(409, status(() -> send(FANS_CHOICE)));
+        send(FANS_CHOICE);
+        assertEquals(ProofState.APPROVED, stateOf(service.today(fan), FANS_CHOICE));
+        assertEquals(2, service.today(fan).categories().get(0).count());
     }
 
     @Test
-    void eachCategoryHasADailyLimit() {
-        send(FANS_CHOICE, FANS_CHOICE);
-        assertEquals(409, status(() -> send(FANS_CHOICE)));
-        assertEquals(2, proofs.count(fan, TODAY_KST));
+    void thereIsNoDailyLimit() {
+        for (int i = 0; i < 10; i++) {
+            send(FANS_CHOICE, FANS_CHOICE, SONG_OF_THE_YEAR);
+        }
+        assertEquals(30, proofs.count(fan, TODAY_KST));
+    }
+
+    @Test
+    void oneRequestCarriesAFewCertificatesAtATime() {
+        assertEquals(400, status(() -> send(FANS_CHOICE, FANS_CHOICE, FANS_CHOICE, FANS_CHOICE)));
+    }
+
+    @Test
+    void theDayIsAnnouncedAsDoneOnlyOnce() {
+        send(FANS_CHOICE, SONG_OF_THE_YEAR);
+        service.approve(1);
+        assertTrue(service.approve(2).done());
+        send(FANS_CHOICE);
+        assertFalse(service.approve(3).done());
     }
 
     @Test
@@ -156,7 +173,6 @@ class ProofServiceTest {
         ProofView raceDay = service.today(fan);
         assertEquals(ProofState.MISSING, stateOf(raceDay, FANS_CHOICE));
         assertEquals(0, raceDay.categories().get(0).count());
-        // and the practice proofs didn't use up the daily limit
         send(FANS_CHOICE, FANS_CHOICE);
         assertFalse(proofs.last().isPractice());
     }

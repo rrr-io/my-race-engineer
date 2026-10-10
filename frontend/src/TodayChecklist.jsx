@@ -60,7 +60,7 @@ export default function TodayChecklist({ radio, line, onProof, glow = false, pra
         <section className="today-panel" id="today-panel" aria-label="Today checklist">
           {line && (
             <p className="today-radio">
-              <span className="today-from">ENGINEER</span>
+              <span className="today-from">ENGENEer</span>
               <span>"{line}"</span>
             </p>
           )}
@@ -79,7 +79,7 @@ export default function TodayChecklist({ radio, line, onProof, glow = false, pra
                 <li key={c.id} className={`check-item is-${c.state.toLowerCase()}`}>
                   {todo
                     ? <button type="button" className="check-row" onClick={toProof}
-                              aria-label={`${c.name}: ${LABELS[c.state]}. Upload the screenshot`}>{inner}</button>
+                              aria-label={`${c.name}: ${LABELS[c.state]}. Upload the certificate`}>{inner}</button>
                     : <span className="check-row">{inner}</span>}
                 </li>
               )

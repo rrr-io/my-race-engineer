@@ -18,7 +18,7 @@ export default function Onboarding({ onJoin }) {
       <header className="onb-head">
         <div className="eyebrow">STEP 1 OF 2 · PICK YOUR DRIVER</div>
         <h1>Who are you racing for?</h1>
-        <p className="muted">Pick your driver. You'll join their pit crew and get a race engineer who keeps you on track every day.</p>
+        <p className="muted">Pick your driver. You'll join their pit crew and get a race ENGENEer who keeps you on track every day.</p>
       </header>
 
       <div className="driver-grid" role="radiogroup" aria-label="Drivers">

@@ -15,7 +15,7 @@ export default function Admin() {
     <div className="screen admin">
       <header className="home-head">
         <div>
-          <div className="eyebrow">E1 RACE ENGINEER</div>
+          <div className="eyebrow">E1 RACE ENGENEer</div>
           <div className="team-name">Race Control</div>
         </div>
         <a className="admin-link" href="/">Back to app</a>
@@ -242,7 +242,7 @@ function SetupPanel({ auth, onLogout }) {
         <div className="eyebrow">REMINDERS</div>
         <p className="muted small">
           While a race phase is on (and no pit stop), fans who still have categories to do get a radio call from their
-          engineer, in their own local time and only inside this window. It stops once every category has a proof in
+          ENGENEer, in their own local time and only inside this window. It stops once every category has a proof in
           review or approved, and starts again if one is rejected.
         </p>
         {rem && (

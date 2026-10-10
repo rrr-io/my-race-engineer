@@ -63,7 +63,7 @@ export const deletePush = (crewId, endpoint) =>
 export const submitProof = (crewId, items) => {
   const form = new FormData()
   items.forEach(({ file, categoryId }) => {
-    form.append('files', file, file.name || 'screenshot.jpg')
+    form.append('files', file, file.name || 'certificate.jpg')
     form.append('categoryIds', String(categoryId))
   })
   return request(`/crew/${crewId}/proofs`, { method: 'POST', body: form })

@@ -79,7 +79,7 @@ export default function WeekendPanel({ auth, onLogout }) {
         <div className="eyebrow">RACE WEEKEND</div>
         <p className="muted small">
           The dates fans add to their calendar. Enter times in Korea time (KST): each fan sees them in their own time
-          zone, with a reminder from their engineer 30 minutes before.
+          zone, with a reminder from their ENGENEer 30 minutes before.
         </p>
         {events === null && !error && <p className="muted small">Loading…</p>}
         {events?.length === 0 && <p className="muted small">No dates yet.</p>}
